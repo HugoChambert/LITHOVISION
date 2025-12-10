@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { type StoneMaterial } from './lib/supabase';
+import * as api from './lib/api';
 import Header from './components/Header';
 import ImageUpload from './components/ImageUpload';
 import AreaSelector from './components/AreaSelector';
@@ -14,52 +15,88 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageId, setImageId] = useState<string | null>(null);
   const [maskData, setMaskData] = useState<string | null>(null);
+  const [maskId, setMaskId] = useState<string | null>(null);
   const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleImageUpload = (imageUrl: string) => {
+  const handleImageUpload = async (imageUrl: string, file: File) => {
     setUploadedImage(imageUrl);
-    setCurrentStep('select');
+
+    try {
+      const response = await api.uploadImage(file);
+      setImageId(response.image_id);
+      setCurrentStep('select');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    }
   };
 
-  const handleAreaSelected = (mask: string) => {
+  const handleAreaSelected = async (mask: string, maskBlob: Blob) => {
     setMaskData(mask);
-    setCurrentStep('choose-stone');
+
+    try {
+      const response = await api.uploadMask(maskBlob);
+      setMaskId(response.image_id);
+      setCurrentStep('choose-stone');
+    } catch (error) {
+      console.error('Error uploading mask:', error);
+      alert('Failed to upload mask. Please try again.');
+    }
   };
 
-  const handleStoneSelected = async (stone: StoneMaterial) => {
+  const handleStoneSelected = async (stone: StoneMaterial, selectedScale: number, selectedOrientation: number) => {
+    if (!imageId || !maskId) {
+      alert('Missing image or mask data');
+      return;
+    }
+
     setSelectedStone(stone);
     setCurrentStep('preview');
     setIsProcessing(true);
 
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-stone-replacement`;
+      const { job_id } = await api.processStoneReplacement(
+        imageId,
+        maskId,
+        stone,
+        selectedScale,
+        selectedOrientation
+      );
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image_url: uploadedImage,
-          mask_data: maskData,
-          stone_material: stone,
-        }),
-      });
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await api.getJobStatus(job_id);
 
-      if (!response.ok) {
-        throw new Error('Failed to process image');
-      }
+          if (status.status === 'completed' && status.result_url) {
+            setPreviewImage(api.getImageUrl(status.result_url));
+            setIsProcessing(false);
+            clearInterval(pollInterval);
+          } else if (status.status === 'failed') {
+            throw new Error(status.error || 'Processing failed');
+          }
+        } catch (error) {
+          console.error('Error checking job status:', error);
+          setIsProcessing(false);
+          clearInterval(pollInterval);
+          alert('Failed to process image. Please try again.');
+        }
+      }, 2000);
 
-      const result = await response.json();
-      setPreviewImage(result.result_image_url);
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (isProcessing) {
+          setIsProcessing(false);
+          alert('Processing timeout. Please try again.');
+        }
+      }, 300000);
+
     } catch (error) {
       console.error('Error processing image:', error);
-      alert('Failed to process image. Please try again.');
-    } finally {
+      alert('Failed to start processing. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -67,7 +104,9 @@ function App() {
   const handleReset = () => {
     setCurrentStep('upload');
     setUploadedImage(null);
+    setImageId(null);
     setMaskData(null);
+    setMaskId(null);
     setSelectedStone(null);
     setPreviewImage(null);
     setIsProcessing(false);

@@ -3,7 +3,7 @@ import './AreaSelector.css';
 
 interface AreaSelectorProps {
   imageUrl: string;
-  onAreaSelected: (maskData: string) => void;
+  onAreaSelected: (maskData: string, maskBlob: Blob) => void;
   onBack: () => void;
 }
 
@@ -13,6 +13,7 @@ function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
   const [brushSize, setBrushSize] = useState(30);
   const [mode, setMode] = useState<'draw' | 'erase'>('draw');
   const [canvasReady, setCanvasReady] = useState(false);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -79,6 +80,12 @@ function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
     img.src = imageUrl;
   };
 
+  const handleAutoGenerate = async () => {
+    setIsAutoGenerating(true);
+    alert('Auto-mask generation will be implemented with SAM backend integration. For now, please draw the mask manually.');
+    setIsAutoGenerating(false);
+  };
+
   const handleContinue = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -112,7 +119,12 @@ function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
 
     tempCtx.putImageData(imageData, 0, 0);
     const maskDataUrl = tempCanvas.toDataURL('image/png');
-    onAreaSelected(maskDataUrl);
+
+    tempCanvas.toBlob((blob) => {
+      if (blob) {
+        onAreaSelected(maskDataUrl, blob);
+      }
+    }, 'image/png');
   };
 
   return (
@@ -136,6 +148,15 @@ function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
         </div>
 
         <div className="tools-panel">
+          <button
+            className="btn btn-primary"
+            onClick={handleAutoGenerate}
+            disabled={isAutoGenerating}
+            style={{ marginBottom: 'var(--spacing-md)', width: '100%' }}
+          >
+            {isAutoGenerating ? 'Generating...' : 'Auto-Generate Mask (SAM)'}
+          </button>
+
           <div className="tool-group">
             <label className="tool-label">Mode</label>
             <div className="mode-buttons">

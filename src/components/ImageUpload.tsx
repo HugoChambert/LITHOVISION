@@ -2,12 +2,13 @@ import { useState, useRef } from 'react';
 import './ImageUpload.css';
 
 interface ImageUploadProps {
-  onImageUpload: (imageUrl: string) => void;
+  onImageUpload: (imageUrl: string, file: File) => void;
 }
 
 function ImageUpload({ onImageUpload }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -37,6 +38,7 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
   };
 
   const processFile = (file: File) => {
+    setCurrentFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
@@ -46,13 +48,14 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
   };
 
   const handleContinue = () => {
-    if (previewUrl) {
-      onImageUpload(previewUrl);
+    if (previewUrl && currentFile) {
+      onImageUpload(previewUrl, currentFile);
     }
   };
 
   const handleReset = () => {
     setPreviewUrl(null);
+    setCurrentFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
