@@ -34,7 +34,6 @@ function App() {
     try {
       const response = await api.uploadImage(file);
       setImageId(response.image_id);
-      setUploadedImage(response.image_url);
       setCurrentStep('select');
     } catch (error) {
       console.error('Error uploading image:', error);
