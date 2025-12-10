@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type StoneMaterial } from './lib/supabase';
+import { supabase } from './lib/supabase';
 import * as api from './lib/api';
 import Header from './components/Header';
 import ImageUpload from './components/ImageUpload';
@@ -115,25 +116,43 @@ function App() {
     setIsProcessing(false);
   };
 
-  const checkAuthentication = () => {
+  const checkAuthentication = async () => {
     const session = sessionStorage.getItem('admin_session');
-    if (session) {
-      const sessionTime = parseInt(session);
-      const currentTime = Date.now();
-      const sessionDuration = 3600000;
+    const userId = sessionStorage.getItem('admin_user_id');
 
-      if (currentTime - sessionTime < sessionDuration) {
-        setIsAuthenticated(true);
-        return true;
-      } else {
-        sessionStorage.removeItem('admin_session');
-      }
+    if (!session || !userId) {
+      return false;
     }
+
+    const sessionTime = parseInt(session);
+    const currentTime = Date.now();
+    const sessionDuration = 3600000;
+
+    if (currentTime - sessionTime >= sessionDuration) {
+      sessionStorage.removeItem('admin_session');
+      sessionStorage.removeItem('admin_user_id');
+      await supabase.auth.signOut();
+      return false;
+    }
+
+    const { data: adminData } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('id', userId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (adminData) {
+      setIsAuthenticated(true);
+      return true;
+    }
+
     return false;
   };
 
-  const handleAdminAccess = () => {
-    if (checkAuthentication()) {
+  const handleAdminAccess = async () => {
+    const isAuth = await checkAuthentication();
+    if (isAuth) {
       setShowAdmin(true);
     } else {
       setShowAuthModal(true);
@@ -150,17 +169,21 @@ function App() {
     setShowAuthModal(false);
   };
 
-  const handleAdminExit = () => {
+  const handleAdminExit = async () => {
     setShowAdmin(false);
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('admin_session');
+    sessionStorage.removeItem('admin_user_id');
+    await supabase.auth.signOut();
   };
 
   useEffect(() => {
     checkAuthentication();
 
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyPress = async (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'A') {
         e.preventDefault();
-        handleAdminAccess();
+        await handleAdminAccess();
       }
     };
 
