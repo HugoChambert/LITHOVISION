@@ -5,7 +5,7 @@ from app.celery_app import celery_app
 from app.ml.sam_segmentation import sam_segmenter
 from app.ml.depth_estimation import depth_estimator
 from app.ml.sdxl_inpainting import sdxl_inpainter
-from app.ml.color_matching import color_matcher
+from app.ml.post_processing import post_processor
 from app.config import UPLOAD_DIR
 
 @celery_app.task(bind=True)
@@ -44,11 +44,12 @@ def process_stone_replacement(
             depth_map
         )
 
-        self.update_state(state='PROGRESS', meta={'step': 'Matching colors', 'progress': 85})
-        final_image = color_matcher.match_colors(
+        self.update_state(state='PROGRESS', meta={'step': 'Post-processing and blending', 'progress': 85})
+        final_image = post_processor.full_pipeline(
             image_path,
             inpainted_image,
-            refined_mask_path
+            refined_mask_path,
+            enable_seamless=False
         )
 
         result_id = str(uuid.uuid4())

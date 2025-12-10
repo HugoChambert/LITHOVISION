@@ -10,13 +10,15 @@ function AdminPanel() {
 
   const [formData, setFormData] = useState({
     name: '',
-    type: 'granite' as 'granite' | 'marble' | 'quartz',
+    type: 'granite',
     description: '',
-    image_url: '',
-    thumbnail_url: '',
+    color_family: 'white',
+    pattern: 'veined',
+    finish: 'polished',
+    preview_image_url: '',
     texture_scale: 1.0,
     is_active: true,
-    sort_order: 0,
+    metadata: {},
   });
 
   useEffect(() => {
@@ -26,9 +28,9 @@ function AdminPanel() {
   const fetchStones = async () => {
     try {
       const { data, error } = await supabase
-        .from('stone_materials')
+        .from('material_presets')
         .select('*')
-        .order('sort_order', { ascending: true });
+        .order('name', { ascending: true });
 
       if (error) throw error;
 
@@ -46,7 +48,7 @@ function AdminPanel() {
     try {
       if (editingStone) {
         const { error } = await supabase
-          .from('stone_materials')
+          .from('material_presets')
           .update({
             ...formData,
             updated_at: new Date().toISOString(),
@@ -56,7 +58,7 @@ function AdminPanel() {
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('stone_materials')
+          .from('material_presets')
           .insert([formData]);
 
         if (error) throw error;
@@ -76,11 +78,13 @@ function AdminPanel() {
       name: stone.name,
       type: stone.type,
       description: stone.description,
-      image_url: stone.image_url,
-      thumbnail_url: stone.thumbnail_url || '',
+      color_family: stone.color_family,
+      pattern: stone.pattern,
+      finish: stone.finish,
+      preview_image_url: stone.preview_image_url || '',
       texture_scale: stone.texture_scale,
       is_active: stone.is_active,
-      sort_order: stone.sort_order,
+      metadata: stone.metadata || {},
     });
     setShowForm(true);
   };
@@ -90,7 +94,7 @@ function AdminPanel() {
 
     try {
       const { error } = await supabase
-        .from('stone_materials')
+        .from('material_presets')
         .delete()
         .eq('id', id);
 
@@ -108,11 +112,13 @@ function AdminPanel() {
       name: '',
       type: 'granite',
       description: '',
-      image_url: '',
-      thumbnail_url: '',
+      color_family: 'white',
+      pattern: 'veined',
+      finish: 'polished',
+      preview_image_url: '',
       texture_scale: 1.0,
       is_active: true,
-      sort_order: 0,
+      metadata: {},
     });
     setEditingStone(null);
     setShowForm(false);
@@ -171,21 +177,57 @@ function AdminPanel() {
           </div>
 
           <div className="form-group">
-            <label>Image URL</label>
-            <input
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+            <label>Color Family</label>
+            <select
+              value={formData.color_family}
+              onChange={(e) => setFormData({ ...formData, color_family: e.target.value })}
               required
-            />
+            >
+              <option value="white">White</option>
+              <option value="black">Black</option>
+              <option value="gray">Gray</option>
+              <option value="beige">Beige</option>
+              <option value="brown">Brown</option>
+              <option value="green">Green</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+            </select>
           </div>
 
           <div className="form-group">
-            <label>Thumbnail URL (optional)</label>
+            <label>Pattern</label>
+            <select
+              value={formData.pattern}
+              onChange={(e) => setFormData({ ...formData, pattern: e.target.value })}
+              required
+            >
+              <option value="veined">Veined</option>
+              <option value="speckled">Speckled</option>
+              <option value="solid">Solid</option>
+              <option value="crystalline">Crystalline</option>
+              <option value="textured">Textured</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Finish</label>
+            <select
+              value={formData.finish}
+              onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
+              required
+            >
+              <option value="polished">Polished</option>
+              <option value="honed">Honed</option>
+              <option value="leathered">Leathered</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Preview Image URL (optional)</label>
             <input
               type="url"
-              value={formData.thumbnail_url}
-              onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+              value={formData.preview_image_url}
+              onChange={(e) => setFormData({ ...formData, preview_image_url: e.target.value })}
             />
           </div>
 
@@ -196,16 +238,6 @@ function AdminPanel() {
               step="0.1"
               value={formData.texture_scale}
               onChange={(e) => setFormData({ ...formData, texture_scale: parseFloat(e.target.value) })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Sort Order</label>
-            <input
-              type="number"
-              value={formData.sort_order}
-              onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) })}
               required
             />
           </div>
@@ -237,15 +269,17 @@ function AdminPanel() {
         <div className="stones-table">
           {stones.map((stone) => (
             <div key={stone.id} className="stone-row">
-              <img
-                src={stone.thumbnail_url || stone.image_url}
-                alt={stone.name}
-                className="stone-thumb"
-              />
+              {stone.preview_image_url && (
+                <img
+                  src={stone.preview_image_url}
+                  alt={stone.name}
+                  className="stone-thumb"
+                />
+              )}
               <div className="stone-details">
                 <h4>{stone.name}</h4>
                 <p className="stone-meta">
-                  {stone.type} • Order: {stone.sort_order} • {stone.is_active ? 'Active' : 'Inactive'}
+                  {stone.type} • {stone.pattern} • {stone.is_active ? 'Active' : 'Inactive'}
                 </p>
               </div>
               <div className="stone-actions">

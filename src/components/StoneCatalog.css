@@ -82,6 +82,22 @@
   object-fit: cover;
 }
 
+.stone-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.placeholder-text {
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 .selected-badge {
   position: absolute;
   top: var(--spacing-md);
@@ -117,16 +133,23 @@
   color: var(--color-text);
 }
 
-.stone-type {
+.stone-meta {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.stone-type,
+.stone-pattern {
   display: inline-block;
   padding: 4px 12px;
   background: var(--color-surface);
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: capitalize;
   color: var(--color-text-light);
-  margin-bottom: var(--spacing-sm);
 }
 
 .stone-description {

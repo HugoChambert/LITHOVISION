@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, type StoneMaterial } from '../lib/supabase';
+import { getMaterials, getMaterialTypes, type StoneMaterial } from '../lib/supabase';
 import './StoneCatalog.css';
 
 interface StoneCatalogProps {
@@ -7,33 +7,53 @@ interface StoneCatalogProps {
   onBack: () => void;
 }
 
+function getColorForFamily(colorFamily: string, darker: boolean = false): string {
+  const colors: Record<string, [string, string]> = {
+    white: ['#f8f9fa', '#e9ecef'],
+    black: ['#343a40', '#212529'],
+    gray: ['#6c757d', '#495057'],
+    beige: ['#d4c5b9', '#c5b5a8'],
+    brown: ['#8b4513', '#654321'],
+    green: ['#2d6a4f', '#1b4332'],
+    blue: ['#0077b6', '#023e8a'],
+    red: ['#d62828', '#9d0208'],
+  };
+
+  const [light, dark] = colors[colorFamily.toLowerCase()] || ['#adb5bd', '#868e96'];
+  return darker ? dark : light;
+}
+
 function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
   const [stones, setStones] = useState<StoneMaterial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<'all' | 'granite' | 'marble' | 'quartz'>('all');
+  const [types, setTypes] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
   const [scale, setScale] = useState(1.0);
   const [orientation, setOrientation] = useState(0);
 
   useEffect(() => {
     fetchStones();
+    fetchTypes();
   }, []);
 
   const fetchStones = async () => {
     try {
-      const { data, error } = await supabase
-        .from('stone_materials')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-
-      if (error) throw error;
-
+      const data = await getMaterials();
       setStones(data || []);
     } catch (error) {
       console.error('Error fetching stones:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTypes = async () => {
+    try {
+      const data = await getMaterialTypes();
+      setTypes(data || []);
+    } catch (error) {
+      console.error('Error fetching types:', error);
     }
   };
 
@@ -43,6 +63,8 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
 
   const handleStoneClick = (stone: StoneMaterial) => {
     setSelectedStone(stone);
+    setScale(stone.texture_scale || 1.0);
+    setOrientation((stone.metadata?.vein_orientation as number) || 0);
   };
 
   const handleContinue = () => {
@@ -71,26 +93,17 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
           className={`filter-tab ${selectedType === 'all' ? 'active' : ''}`}
           onClick={() => setSelectedType('all')}
         >
-          All Stones
+          All Materials
         </button>
-        <button
-          className={`filter-tab ${selectedType === 'granite' ? 'active' : ''}`}
-          onClick={() => setSelectedType('granite')}
-        >
-          Granite
-        </button>
-        <button
-          className={`filter-tab ${selectedType === 'marble' ? 'active' : ''}`}
-          onClick={() => setSelectedType('marble')}
-        >
-          Marble
-        </button>
-        <button
-          className={`filter-tab ${selectedType === 'quartz' ? 'active' : ''}`}
-          onClick={() => setSelectedType('quartz')}
-        >
-          Quartz
-        </button>
+        {types.map((type) => (
+          <button
+            key={type}
+            className={`filter-tab ${selectedType === type ? 'active' : ''}`}
+            onClick={() => setSelectedType(type)}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
       </div>
 
       <div className="stones-grid">
@@ -101,11 +114,19 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
             onClick={() => handleStoneClick(stone)}
           >
             <div className="stone-image-wrapper">
-              <img
-                src={stone.thumbnail_url || stone.image_url}
-                alt={stone.name}
-                className="stone-image"
-              />
+              {stone.preview_image_url ? (
+                <img
+                  src={stone.preview_image_url}
+                  alt={stone.name}
+                  className="stone-image"
+                />
+              ) : (
+                <div className="stone-placeholder" style={{
+                  background: `linear-gradient(135deg, ${getColorForFamily(stone.color_family)} 0%, ${getColorForFamily(stone.color_family, true)} 100%)`
+                }}>
+                  <span className="placeholder-text">{stone.name}</span>
+                </div>
+              )}
               {selectedStone?.id === stone.id && (
                 <div className="selected-badge">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
@@ -116,8 +137,11 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
             </div>
             <div className="stone-info">
               <h3 className="stone-name">{stone.name}</h3>
-              <span className="stone-type">{stone.type}</span>
-              <p className="stone-description">{stone.description}</p>
+              <div className="stone-meta">
+                <span className="stone-type">{stone.type}</span>
+                <span className="stone-pattern">{stone.pattern}</span>
+              </div>
+              <p className="stone-description">{stone.description.substring(0, 100)}...</p>
             </div>
           </div>
         ))}

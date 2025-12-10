@@ -17,7 +17,7 @@ from app.models.schemas import (
 )
 from app.api.tasks import process_stone_replacement
 from app.celery_app import celery_app
-from app.config import UPLOAD_DIR
+from app.config import UPLOAD_DIR, supabase
 from app.ml.sam_segmentation import sam_segmenter
 from app.ml.depth_estimation import depth_estimator
 
@@ -204,3 +204,63 @@ async def get_upload(filename: str):
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path)
+
+@router.get("/materials")
+async def get_materials(
+    type: str = None,
+    color_family: str = None
+):
+    try:
+        if not supabase:
+            raise HTTPException(status_code=503, detail="Database not configured")
+
+        query = supabase.table('material_presets').select('*').eq('is_active', True)
+
+        if type:
+            query = query.eq('type', type)
+        if color_family:
+            query = query.eq('color_family', color_family)
+
+        response = query.order('name').execute()
+
+        return {
+            "materials": response.data,
+            "count": len(response.data)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching materials: {str(e)}")
+
+@router.get("/materials/{material_id}")
+async def get_material(material_id: str):
+    try:
+        if not supabase:
+            raise HTTPException(status_code=503, detail="Database not configured")
+
+        response = supabase.table('material_presets').select('*').eq('id', material_id).maybeSingle().execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Material not found")
+
+        return response.data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching material: {str(e)}")
+
+@router.get("/materials/types/list")
+async def get_material_types():
+    try:
+        if not supabase:
+            raise HTTPException(status_code=503, detail="Database not configured")
+
+        response = supabase.table('material_presets').select('type').eq('is_active', True).execute()
+
+        types = list(set([item['type'] for item in response.data]))
+        types.sort()
+
+        return {
+            "types": types,
+            "count": len(types)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching material types: {str(e)}")
