@@ -17,9 +17,14 @@ from app.models.schemas import (
 )
 from app.api.tasks import process_stone_replacement
 from app.celery_app import celery_app
-from app.config import UPLOAD_DIR, supabase
-from app.ml.sam_segmentation import sam_segmenter
-from app.ml.depth_estimation import depth_estimator
+from app.config import UPLOAD_DIR, supabase, USE_STUB_MODELS
+
+if USE_STUB_MODELS:
+    from app.ml.sam_segmentation_stub import sam_segmenter
+    from app.ml.depth_estimation_stub import depth_estimator
+else:
+    from app.ml.sam_segmentation import sam_segmenter
+    from app.ml.depth_estimation import depth_estimator
 
 router = APIRouter()
 

@@ -2,11 +2,20 @@ import os
 import uuid
 from PIL import Image
 from app.celery_app import celery_app
-from app.ml.sam_segmentation import sam_segmenter
-from app.ml.depth_estimation import depth_estimator
-from app.ml.sdxl_inpainting import sdxl_inpainter
+from app.config import UPLOAD_DIR, USE_STUB_MODELS
+
+if USE_STUB_MODELS:
+    from app.ml.sam_segmentation_stub import sam_segmenter
+    from app.ml.depth_estimation_stub import depth_estimator
+    from app.ml.sdxl_inpainting_stub import sdxl_inpainter
+    print("Using STUB ML models - Set USE_STUB_MODELS=false in .env to use real models")
+else:
+    from app.ml.sam_segmentation import sam_segmenter
+    from app.ml.depth_estimation import depth_estimator
+    from app.ml.sdxl_inpainting import sdxl_inpainter
+    print("Using REAL ML models")
+
 from app.ml.post_processing import post_processor
-from app.config import UPLOAD_DIR
 
 @celery_app.task(bind=True)
 def process_stone_replacement(

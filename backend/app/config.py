@@ -13,6 +13,8 @@ MODEL_DIR = "/app/models"
 SAM_CHECKPOINT = os.path.join(MODEL_DIR, "sam_vit_h_4b8939.pth")
 SAM_MODEL_TYPE = "vit_h"
 
+USE_STUB_MODELS = os.getenv("USE_STUB_MODELS", "true").lower() == "true"
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
