@@ -54,3 +54,17 @@
     font-size: 13px;
   }
 }
+
+@media (max-width: 480px) {
+  .header {
+    padding: var(--spacing-lg) 0 var(--spacing-md) 0;
+  }
+
+  .logo {
+    font-size: 24px;
+  }
+
+  .tagline {
+    font-size: 12px;
+  }
+}

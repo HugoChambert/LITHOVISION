@@ -2,6 +2,7 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: var(--spacing-xl);
+  min-height: 100vh;
 }
 
 .admin-header {
@@ -167,15 +168,53 @@
 }
 
 @media (max-width: 768px) {
+  .admin-panel {
+    padding: var(--spacing-md);
+  }
+
   .admin-header {
     flex-direction: column;
     gap: var(--spacing-md);
     align-items: stretch;
   }
 
+  .admin-header h2 {
+    font-size: 24px;
+  }
+
+  .stone-form,
+  .stones-list {
+    padding: var(--spacing-md);
+  }
+
+  .stone-form h3,
+  .stones-list h3 {
+    font-size: 18px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+
   .stone-row {
     flex-direction: column;
     align-items: flex-start;
+    padding: var(--spacing-sm);
+  }
+
+  .stone-thumb {
+    width: 100%;
+    height: 150px;
   }
 
   .stone-actions {
@@ -184,5 +223,16 @@
 
   .btn-icon {
     flex: 1;
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-panel {
+    padding: var(--spacing-sm);
+  }
+
+  .admin-header h2 {
+    font-size: 20px;
   }
 }

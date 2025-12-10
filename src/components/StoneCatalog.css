@@ -1,6 +1,7 @@
 .stone-catalog {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 var(--spacing-md);
 }
 
 .loading-state,
@@ -243,16 +244,88 @@
   color: var(--color-text-light);
 }
 
+@media (max-width: 1024px) {
+  .stones-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
+  .stone-catalog {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .filter-tabs {
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs);
+  }
+
+  .filter-tab {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 12px;
+  }
+
   .stones-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .stone-image-wrapper {
+    height: 180px;
+  }
+
+  .stone-name {
+    font-size: 16px;
+  }
+
+  .stone-description {
+    font-size: 13px;
+  }
+
+  .adjustment-controls {
+    padding: var(--spacing-md);
+  }
+
+  .controls-title {
+    font-size: 15px;
   }
 
   .action-buttons {
     flex-direction: column;
+    gap: var(--spacing-sm);
   }
 
   .btn {
     width: 100%;
+    padding: 16px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 640px) {
+  .stones-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .stone-image-wrapper {
+    height: 140px;
+  }
+
+  .stone-info {
+    padding: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .stones-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stone-image-wrapper {
+    height: 200px;
   }
 }

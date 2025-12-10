@@ -1,6 +1,7 @@
 .area-selector {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 var(--spacing-md);
 }
 
 .selector-container {
@@ -19,6 +20,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 300px;
+  width: 100%;
 }
 
 .selection-canvas {
@@ -162,11 +165,55 @@
 }
 
 @media (max-width: 768px) {
+  .area-selector {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .selector-container {
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .canvas-wrapper {
+    border-radius: var(--radius-md);
+    min-height: 250px;
+  }
+
+  .canvas-loading {
+    font-size: 16px;
+  }
+
+  .tools-panel {
+    padding: var(--spacing-md);
+  }
+
+  .tool-info {
+    font-size: 13px;
+  }
+
   .action-buttons {
     flex-direction: column;
+    gap: var(--spacing-sm);
   }
 
   .btn {
     width: 100%;
+    padding: 16px;
+    font-size: 15px;
+  }
+
+  .error-message {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .canvas-wrapper {
+    min-height: 200px;
+  }
+
+  .selection-canvas {
+    border-radius: var(--radius-sm);
   }
 }

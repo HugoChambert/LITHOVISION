@@ -48,15 +48,25 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
     img.src = imageUrl;
   }, [imageUrl]);
 
-  const handleCanvasClick = async (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = async (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (isGenerating || !canvasReady) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const displayX = e.clientX - rect.left;
-    const displayY = e.clientY - rect.top;
+    let displayX: number;
+    let displayY: number;
+
+    if ('touches' in e) {
+      e.preventDefault();
+      const touch = e.touches[0] || e.changedTouches[0];
+      displayX = touch.clientX - rect.left;
+      displayY = touch.clientY - rect.top;
+    } else {
+      displayX = e.clientX - rect.left;
+      displayY = e.clientY - rect.top;
+    }
 
     const imageX = Math.round(displayX / scaleRef.current);
     const imageY = Math.round(displayY / scaleRef.current);
@@ -163,6 +173,7 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
           <canvas
             ref={overlayCanvasRef}
             onClick={handleCanvasClick}
+            onTouchEnd={handleCanvasClick}
             className="selection-canvas"
             style={{ position: 'absolute', top: 0, left: 0, pointerEvents: isGenerating ? 'none' : 'auto' }}
           />

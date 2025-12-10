@@ -1,6 +1,7 @@
 .image-upload {
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 var(--spacing-md);
 }
 
 .section-title {
@@ -145,19 +146,53 @@
 }
 
 @media (max-width: 768px) {
+  .image-upload {
+    padding: 0 var(--spacing-sm);
+  }
+
   .section-title {
-    font-size: 24px;
+    font-size: 20px;
+  }
+
+  .section-description {
+    font-size: 13px;
   }
 
   .upload-zone {
     padding: var(--spacing-xl);
   }
 
+  .upload-text {
+    font-size: 15px;
+  }
+
+  .upload-hint {
+    font-size: 12px;
+  }
+
+  .preview-image {
+    max-height: 400px;
+    border-radius: var(--radius-md);
+  }
+
   .preview-actions {
     flex-direction: column;
+    gap: var(--spacing-sm);
   }
 
   .btn {
     width: 100%;
+    padding: 16px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-zone {
+    padding: var(--spacing-lg);
+  }
+
+  .preview-image {
+    max-height: 300px;
   }
 }

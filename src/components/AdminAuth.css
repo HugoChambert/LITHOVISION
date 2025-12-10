@@ -170,6 +170,7 @@
 @media (max-width: 768px) {
   .admin-auth-modal {
     padding: var(--spacing-lg);
+    width: 95%;
   }
 
   .auth-header h2 {
@@ -177,6 +178,29 @@
   }
 
   .form-group input {
-    font-size: 14px;
+    font-size: 16px;
+    padding: var(--spacing-md);
+  }
+
+  .auth-actions {
+    flex-direction: column;
+  }
+
+  .auth-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-auth-modal {
+    padding: var(--spacing-md);
+  }
+
+  .auth-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .auth-header h2 {
+    font-size: 16px;
   }
 }
