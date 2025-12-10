@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from 'react';
-import * as api from '../lib/api';
 import './AreaSelector.css';
 
 interface AreaSelectorProps {
@@ -9,13 +8,12 @@ interface AreaSelectorProps {
   onBack: () => void;
 }
 
-function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelectorProps) {
+function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushSize, setBrushSize] = useState(30);
   const [mode, setMode] = useState<'draw' | 'erase'>('draw');
   const [canvasReady, setCanvasReady] = useState(false);
-  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -82,69 +80,6 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
     img.src = imageUrl;
   };
 
-  const handleAutoGenerate = async () => {
-    setIsAutoGenerating(true);
-
-    try {
-      const response = await api.generateMask(imageId);
-
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const bgImg = new Image();
-        bgImg.onload = () => {
-          ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
-
-          const maskCanvas = document.createElement('canvas');
-          maskCanvas.width = img.width;
-          maskCanvas.height = img.height;
-          const maskCtx = maskCanvas.getContext('2d');
-          if (maskCtx) {
-            maskCtx.drawImage(img, 0, 0);
-            const maskData = maskCtx.getImageData(0, 0, img.width, img.height);
-
-            const overlayData = ctx.createImageData(canvas.width, canvas.height);
-            for (let y = 0; y < canvas.height; y++) {
-              for (let x = 0; x < canvas.width; x++) {
-                const srcX = Math.floor((x / canvas.width) * img.width);
-                const srcY = Math.floor((y / canvas.height) * img.height);
-                const srcIdx = (srcY * img.width + srcX) * 4;
-                const dstIdx = (y * canvas.width + x) * 4;
-
-                if (maskData.data[srcIdx] > 127) {
-                  overlayData.data[dstIdx] = 59;
-                  overlayData.data[dstIdx + 1] = 130;
-                  overlayData.data[dstIdx + 2] = 246;
-                  overlayData.data[dstIdx + 3] = 128;
-                }
-              }
-            }
-            ctx.putImageData(overlayData, 0, 0);
-          }
-        };
-        bgImg.src = imageUrl;
-      };
-      img.src = api.getImageUrl(response.mask_url);
-
-      setIsAutoGenerating(false);
-    } catch (error) {
-      console.error('Error generating mask:', error);
-      alert('Failed to auto-generate mask. Please try drawing manually.');
-      setIsAutoGenerating(false);
-    }
-  };
-
   const handleContinue = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -207,15 +142,6 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
         </div>
 
         <div className="tools-panel">
-          <button
-            className="btn btn-primary"
-            onClick={handleAutoGenerate}
-            disabled={isAutoGenerating}
-            style={{ marginBottom: 'var(--spacing-md)', width: '100%' }}
-          >
-            {isAutoGenerating ? 'Generating...' : 'Auto-Generate Mask (SAM)'}
-          </button>
-
           <div className="tool-group">
             <label className="tool-label">Mode</label>
             <div className="mode-buttons">

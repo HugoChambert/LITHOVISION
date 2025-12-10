@@ -1,28 +1,71 @@
 # Stone Replacement Tool
 
-An AI-powered web application for visualizing stone material replacements in kitchen and bathroom photos. Upload a photo, select the area to replace, choose from a catalog of stone materials, and generate a realistic preview using a sophisticated ML pipeline.
+A production-ready web application for visualizing stone material replacements in kitchen and bathroom photos. Upload a photo, select the area to replace, and choose from a catalog of stone materials.
+
+## ✨ Production Ready
+
+This application is **fully serverless** and ready to deploy to Netlify, Vercel, or any static hosting platform. No GPU servers, Docker, or complex infrastructure required.
 
 ## Features
 
 ### Core Functionality
-- **Photo Upload**: Drag-and-drop or click-to-upload interface with image preview
-- **Interactive Area Selection**: Canvas-based drawing tool with brush/eraser modes for precise selection
+- **Photo Upload**: Drag-and-drop or click-to-upload with Supabase Storage
+- **Interactive Area Selection**: Canvas-based drawing tool with brush/eraser modes
 - **Stone Material Catalog**: Filterable gallery of granite, marble, and quartz materials
-- **AI Processing Pipeline**: Multi-step ML pipeline (SAM → Depth → SDXL → Color Matching)
+- **Job Tracking**: Database-backed processing status tracking
 - **Preview & Comparison**: Side-by-side comparison view with download capability
 
 ### Admin Features
 - **Catalog Management**: Add, edit, and delete stone materials
-- **Easy Updates**: Simple interface for updating the stone catalog without code changes
+- **Secure Access**: Admin authentication with session management
 - **Material Properties**: Configure texture scale, sort order, and visibility
 
 ## Tech Stack
 
 - **Frontend**: React + TypeScript + Vite
 - **Database**: Supabase (PostgreSQL)
-- **Backend**: Supabase Edge Functions (Deno)
+- **Storage**: Supabase Storage
+- **Authentication**: Supabase Auth
 - **Styling**: Custom CSS with design system
-- **AI Pipeline**: SAM, MiDaS, SDXL (integration ready)
+- **AI Integration**: Ready for Replicate, Stability AI, or self-hosted ML
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Supabase account (free tier works)
+
+### Installation
+
+1. **Clone and install dependencies**
+```bash
+npm install
+```
+
+2. **Environment variables are already configured**
+The `.env` file contains your Supabase credentials.
+
+3. **Start development server**
+```bash
+npm run dev
+```
+
+4. **Build for production**
+```bash
+npm run build
+```
+
+### Admin Access
+Press `Ctrl + Shift + A` to access the admin panel and manage the stone catalog.
+
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.
+
+**Quick Deploy:**
+- [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
+- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
 ## Project Structure
 
@@ -73,34 +116,35 @@ Stores user's stone replacement projects:
 - `result_image_url` (text): Generated preview
 - `processing_status` (text): pending | processing | completed | failed
 
-## ML Pipeline
+## Current Processing Status
 
-The edge function orchestrates a four-step ML pipeline:
+The application currently uses **simulated AI processing** for demonstration purposes. This allows you to test the complete workflow without requiring expensive GPU infrastructure.
 
-### 1. SAM Segmentation
-- Refines the user-drawn mask using Segment Anything Model
-- Ensures precise edge detection and area selection
-- **Integration Point**: `samSegmentation()` function
+### What Works Now
+- ✅ Image upload to Supabase Storage
+- ✅ Canvas-based area selection
+- ✅ Stone catalog selection
+- ✅ Job tracking in database
+- ✅ Progress updates
+- ⚠️ Simulated result (placeholder image)
 
-### 2. Depth Estimation
-- Generates depth map using MiDaS or similar model
-- Provides 3D understanding for realistic texture application
-- **Integration Point**: `depthEstimation()` function
+### Adding Real AI Processing
 
-### 3. SDXL Inpainting
-- Applies stone texture to selected area using Stable Diffusion XL
-- Uses depth map for perspective-correct texture mapping
-- Respects texture scale from material properties
-- **Integration Point**: `sdxlInpainting()` function
+The architecture is ready for real AI integration. Choose from:
 
-### 4. Color Matching
-- Adjusts colors for seamless blending with original image
-- Matches lighting and ambient conditions
-- **Integration Point**: `colorMatching()` function
+1. **External APIs** (Recommended for MVP)
+   - Replicate.com (~$0.01-0.05 per image)
+   - Stability AI API
+   - RunPod Serverless
 
-## Integrating Real ML APIs
+2. **Self-Hosted ML** (For high volume)
+   - Deploy `/backend` directory to GPU server
+   - Full SAM + MiDaS + SDXL pipeline
+   - See `backend/README.md` for details
 
-The ML pipeline functions are currently placeholders. To integrate real ML models:
+## Integrating External AI APIs
+
+Update `src/lib/api.ts` to call real AI services:
 
 ### Option 1: Replicate API
 

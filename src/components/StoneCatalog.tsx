@@ -3,7 +3,7 @@ import { getMaterials, getMaterialTypes, type StoneMaterial } from '../lib/supab
 import './StoneCatalog.css';
 
 interface StoneCatalogProps {
-  onStoneSelected: (stone: StoneMaterial, scale: number, orientation: number) => void;
+  onStoneSelected: (stone: StoneMaterial) => void;
   onBack: () => void;
 }
 
@@ -29,8 +29,6 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
   const [types, setTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
-  const [scale, setScale] = useState(1.0);
-  const [orientation, setOrientation] = useState(0);
 
   useEffect(() => {
     fetchStones();
@@ -63,13 +61,11 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
 
   const handleStoneClick = (stone: StoneMaterial) => {
     setSelectedStone(stone);
-    setScale(stone.texture_scale || 1.0);
-    setOrientation((stone.metadata?.vein_orientation as number) || 0);
   };
 
   const handleContinue = () => {
     if (selectedStone) {
-      onStoneSelected(selectedStone, scale, orientation);
+      onStoneSelected(selectedStone);
     }
   };
 
@@ -153,39 +149,6 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
         </div>
       )}
 
-      {selectedStone && (
-        <div className="adjustment-controls">
-          <h3 className="controls-title">Adjust Material Properties</h3>
-          <div className="controls-grid">
-            <div className="control-group">
-              <label className="control-label">Scale: {scale.toFixed(1)}x</label>
-              <input
-                type="range"
-                min="0.5"
-                max="2.0"
-                step="0.1"
-                value={scale}
-                onChange={(e) => setScale(Number(e.target.value))}
-                className="control-slider"
-              />
-              <div className="control-hint">Adjust pattern size</div>
-            </div>
-            <div className="control-group">
-              <label className="control-label">Vein Orientation: {orientation}°</label>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="15"
-                value={orientation}
-                onChange={(e) => setOrientation(Number(e.target.value))}
-                className="control-slider"
-              />
-              <div className="control-hint">Rotate vein pattern</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="action-buttons">
         <button className="btn btn-secondary" onClick={onBack}>

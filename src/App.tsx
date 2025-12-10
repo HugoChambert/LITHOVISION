@@ -25,9 +25,11 @@ function App() {
   const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleImageUpload = async (imageUrl: string, file: File) => {
     setUploadedImage(imageUrl);
+    setUploadError(null);
 
     try {
       const response = await api.uploadImage(file);
@@ -35,7 +37,9 @@ function App() {
       setCurrentStep('select');
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image. Please try again.';
+      setUploadError(errorMessage);
+      setUploadedImage(null);
     }
   };
 
@@ -52,7 +56,7 @@ function App() {
     }
   };
 
-  const handleStoneSelected = async (stone: StoneMaterial, selectedScale: number, selectedOrientation: number) => {
+  const handleStoneSelected = async (stone: StoneMaterial) => {
     if (!imageId || !maskId) {
       alert('Missing image or mask data');
       return;
@@ -66,9 +70,7 @@ function App() {
       const { task_id } = await api.generateStoneReplacement(
         imageId,
         maskId,
-        stone,
-        selectedScale,
-        selectedOrientation
+        stone
       );
 
       const pollInterval = setInterval(async () => {
@@ -236,7 +238,21 @@ function App() {
 
         <div className="workflow-content">
           {currentStep === 'upload' && (
-            <ImageUpload onImageUpload={handleImageUpload} />
+            <>
+              {uploadError && (
+                <div style={{
+                  padding: '16px',
+                  marginBottom: '24px',
+                  backgroundColor: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  color: '#dc2626'
+                }}>
+                  <strong>Error:</strong> {uploadError}
+                </div>
+              )}
+              <ImageUpload onImageUpload={handleImageUpload} />
+            </>
           )}
 
           {currentStep === 'select' && uploadedImage && imageId && (
