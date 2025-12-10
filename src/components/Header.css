@@ -1,0 +1,32 @@
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--spacing-lg) 0;
+  box-shadow: var(--shadow-md);
+  color: white;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.logo {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+}
+
+.tagline {
+  font-size: 16px;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .logo {
+    font-size: 24px;
+  }
+
+  .tagline {
+    font-size: 14px;
+  }
+}

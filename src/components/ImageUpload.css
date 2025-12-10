@@ -1,0 +1,131 @@
+.image-upload {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+  color: var(--color-text);
+}
+
+.section-description {
+  text-align: center;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xl);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xxl);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--color-bg);
+}
+
+.upload-zone:hover {
+  border-color: var(--color-primary);
+  background: rgba(3, 102, 214, 0.02);
+}
+
+.upload-zone.dragging {
+  border-color: var(--color-primary);
+  background: rgba(3, 102, 214, 0.05);
+  transform: scale(1.01);
+}
+
+.upload-icon {
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  justify-content: center;
+}
+
+.upload-text {
+  font-size: 18px;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text);
+}
+
+.upload-text strong {
+  color: var(--color-primary);
+}
+
+.upload-hint {
+  font-size: 14px;
+  color: var(--color-text-light);
+}
+
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.preview-image {
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.preview-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 24px;
+  }
+
+  .upload-zone {
+    padding: var(--spacing-xl);
+  }
+
+  .preview-actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
