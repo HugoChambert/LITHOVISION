@@ -4,15 +4,22 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from PIL import Image
 import io
+import numpy as np
 from app.models.schemas import (
     ImageUploadResponse,
-    ProcessingRequest,
-    ProcessingResponse,
-    JobStatus
+    MaskRequest,
+    MaskResponse,
+    DepthRequest,
+    DepthResponse,
+    GenerateRequest,
+    GenerateResponse,
+    TaskStatus
 )
 from app.api.tasks import process_stone_replacement
 from app.celery_app import celery_app
 from app.config import UPLOAD_DIR
+from app.ml.sam_segmentation import sam_segmenter
+from app.ml.depth_estimation import depth_estimator
 
 router = APIRouter()
 
@@ -36,78 +43,160 @@ async def upload_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing image: {str(e)}")
 
-@router.post("/upload-mask", response_model=ImageUploadResponse)
-async def upload_mask(file: UploadFile = File(...)):
+@router.post("/mask", response_model=MaskResponse)
+async def generate_mask(request: MaskRequest):
     try:
-        contents = await file.read()
-        mask = Image.open(io.BytesIO(contents)).convert('L')
+        image_path = os.path.join(UPLOAD_DIR, f"{request.image_id}.jpg")
+
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image not found")
+
+        image = Image.open(image_path).convert('RGB')
+        image_np = np.array(image)
+
+        height, width = image_np.shape[:2]
+        center_x, center_y = width // 2, height // 2
+
+        point_coords = np.array([[center_x, center_y]])
+        point_labels = np.array([1])
+
+        sam_predictor = sam_segmenter.load_model()
+        sam_predictor.set_image(image_np)
+
+        masks, scores, logits = sam_predictor.predict(
+            point_coords=point_coords,
+            point_labels=point_labels,
+            mask_input=None,
+            multimask_output=True,
+        )
+
+        best_mask_idx = np.argmax(scores)
+        mask = masks[best_mask_idx]
+
+        mask_uint8 = (mask * 255).astype(np.uint8)
+        mask_image = Image.fromarray(mask_uint8, mode='L')
 
         mask_id = str(uuid.uuid4())
         mask_path = os.path.join(UPLOAD_DIR, f"{mask_id}.png")
-        mask.save(mask_path)
+        mask_image.save(mask_path)
 
-        return ImageUploadResponse(
-            image_id=mask_id,
-            image_url=f"/uploads/{mask_id}.png",
-            message="Mask uploaded successfully"
+        return MaskResponse(
+            mask_id=mask_id,
+            mask_url=f"/uploads/{mask_id}.png",
+            message="Mask generated successfully"
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing mask: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating mask: {str(e)}")
 
-@router.post("/process", response_model=ProcessingResponse)
-async def process_image(request: ProcessingRequest):
+@router.post("/depth", response_model=DepthResponse)
+async def generate_depth(request: DepthRequest):
     try:
+        image_path = os.path.join(UPLOAD_DIR, f"{request.image_id}.jpg")
+
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image not found")
+
+        depth_map = depth_estimator.estimate_depth(image_path)
+
+        depth_image = Image.fromarray(depth_map, mode='L')
+
+        depth_id = str(uuid.uuid4())
+        depth_path = os.path.join(UPLOAD_DIR, f"{depth_id}_depth.png")
+        depth_image.save(depth_path)
+
+        return DepthResponse(
+            depth_id=depth_id,
+            depth_url=f"/uploads/{depth_id}_depth.png",
+            message="Depth map generated successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating depth map: {str(e)}")
+
+@router.post("/generate", response_model=GenerateResponse)
+async def generate_preview(request: GenerateRequest):
+    try:
+        image_path = os.path.join(UPLOAD_DIR, f"{request.image_id}.jpg")
+        mask_path = os.path.join(UPLOAD_DIR, f"{request.mask_id}.png")
+
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image not found")
+        if not os.path.exists(mask_path):
+            raise HTTPException(status_code=404, detail="Mask not found")
+
         task = process_stone_replacement.delay(
             request.image_id,
-            request.mask_data,
-            request.stone_material
+            request.mask_id,
+            request.stone_material,
+            request.scale,
+            request.orientation
         )
 
-        return ProcessingResponse(
-            job_id=task.id,
+        return GenerateResponse(
+            task_id=task.id,
             status="queued",
-            message="Processing started"
+            message="Generation started"
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error starting job: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting generation: {str(e)}")
 
-@router.get("/job/{job_id}", response_model=JobStatus)
-async def get_job_status(job_id: str):
-    task = celery_app.AsyncResult(job_id)
+@router.get("/status/{task_id}", response_model=TaskStatus)
+async def get_task_status(task_id: str):
+    task = celery_app.AsyncResult(task_id)
 
     if task.state == 'PENDING':
-        response = JobStatus(
-            job_id=job_id,
+        response = TaskStatus(
+            task_id=task_id,
             status='pending',
             progress=0
         )
     elif task.state == 'PROGRESS':
-        response = JobStatus(
-            job_id=job_id,
+        response = TaskStatus(
+            task_id=task_id,
             status='processing',
             progress=task.info.get('progress', 0)
         )
     elif task.state == 'SUCCESS':
         result = task.result
-        response = JobStatus(
-            job_id=job_id,
+        response = TaskStatus(
+            task_id=task_id,
             status='completed',
             progress=100,
             result_url=result.get('result_url')
         )
     elif task.state == 'FAILURE':
-        response = JobStatus(
-            job_id=job_id,
+        response = TaskStatus(
+            task_id=task_id,
             status='failed',
             error=str(task.info)
         )
     else:
-        response = JobStatus(
-            job_id=job_id,
+        response = TaskStatus(
+            task_id=task_id,
             status=task.state.lower()
         )
 
     return response
+
+@router.get("/result/{task_id}")
+async def get_result(task_id: str):
+    task = celery_app.AsyncResult(task_id)
+
+    if task.state != 'SUCCESS':
+        raise HTTPException(status_code=404, detail="Result not ready or task failed")
+
+    result = task.result
+    result_url = result.get('result_url')
+
+    if not result_url:
+        raise HTTPException(status_code=404, detail="Result URL not found")
+
+    filename = result_url.split('/')[-1]
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Result file not found")
+
+    return FileResponse(file_path, media_type="image/jpeg", filename=filename)
 
 @router.get("/uploads/{filename}")
 async def get_upload(filename: str):

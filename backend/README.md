@@ -119,52 +119,79 @@ Upload original image
 }
 ```
 
-### POST /api/upload-mask
-Upload mask image
+### POST /api/mask
+Run SAM segmentation to auto-generate mask
 
-**Request**: multipart/form-data with file
-**Response**:
+**Request**:
 ```json
 {
-  "image_id": "uuid",
-  "image_url": "/uploads/uuid.png",
-  "message": "Mask uploaded successfully"
+  "image_id": "uuid"
 }
 ```
 
-### POST /api/process
-Start stone replacement processing
+**Response**:
+```json
+{
+  "mask_id": "uuid",
+  "mask_url": "/uploads/uuid.png",
+  "message": "Mask generated successfully"
+}
+```
+
+### POST /api/depth
+Generate depth map for image
+
+**Request**:
+```json
+{
+  "image_id": "uuid"
+}
+```
+
+**Response**:
+```json
+{
+  "depth_id": "uuid",
+  "depth_url": "/uploads/uuid_depth.png",
+  "message": "Depth map generated successfully"
+}
+```
+
+### POST /api/generate
+Trigger Celery task for SDXL inpainting
 
 **Request**:
 ```json
 {
   "image_id": "uuid",
-  "mask_data": "mask_uuid",
+  "mask_id": "uuid",
   "stone_material": {
     "id": "stone_uuid",
     "name": "Carrara Marble",
     "type": "marble",
     "description": "Classic white marble with gray veining"
-  }
+  },
+  "scale": 1.0,
+  "orientation": 0
 }
 ```
 
 **Response**:
 ```json
 {
-  "job_id": "celery_task_id",
+  "task_id": "celery_task_id",
   "status": "queued",
-  "message": "Processing started"
+  "message": "Generation started"
 }
 ```
 
-### GET /api/job/{job_id}
-Get job status and result
+### GET /api/status/{task_id}
+Polling endpoint for task status
 
 **Response**:
 ```json
 {
-  "job_id": "celery_task_id",
+  "task_id": "celery_task_id",
   "status": "completed",
   "progress": 100,
   "result_url": "/uploads/result_uuid.jpg"
@@ -172,6 +199,11 @@ Get job status and result
 ```
 
 **Status values**: `pending`, `processing`, `completed`, `failed`
+
+### GET /api/result/{task_id}
+Download final render
+
+**Response**: Image file (JPEG)
 
 ### GET /api/uploads/{filename}
 Retrieve uploaded/generated files

@@ -27,9 +27,11 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "upload": "/api/upload",
-            "upload_mask": "/api/upload-mask",
-            "process": "/api/process",
-            "job_status": "/api/job/{job_id}",
+            "mask": "/api/mask",
+            "depth": "/api/depth",
+            "generate": "/api/generate",
+            "status": "/api/status/{task_id}",
+            "result": "/api/result/{task_id}",
             "uploads": "/api/uploads/{filename}"
         }
     }

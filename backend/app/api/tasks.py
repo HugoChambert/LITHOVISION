@@ -13,7 +13,9 @@ def process_stone_replacement(
     self,
     image_id: str,
     mask_id: str,
-    stone_material: dict
+    stone_material: dict,
+    scale: float = 1.0,
+    orientation: int = 0
 ):
     try:
         self.update_state(state='PROGRESS', meta={'step': 'Starting', 'progress': 0})

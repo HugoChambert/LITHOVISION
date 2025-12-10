@@ -59,7 +59,7 @@ function App() {
     setIsProcessing(true);
 
     try {
-      const { job_id } = await api.processStoneReplacement(
+      const { task_id } = await api.generateStoneReplacement(
         imageId,
         maskId,
         stone,
@@ -69,7 +69,7 @@ function App() {
 
       const pollInterval = setInterval(async () => {
         try {
-          const status = await api.getJobStatus(job_id);
+          const status = await api.getTaskStatus(task_id);
 
           if (status.status === 'completed' && status.result_url) {
             setPreviewImage(api.getImageUrl(status.result_url));
@@ -79,7 +79,7 @@ function App() {
             throw new Error(status.error || 'Processing failed');
           }
         } catch (error) {
-          console.error('Error checking job status:', error);
+          console.error('Error checking task status:', error);
           setIsProcessing(false);
           clearInterval(pollInterval);
           alert('Failed to process image. Please try again.');
@@ -154,9 +154,10 @@ function App() {
             <ImageUpload onImageUpload={handleImageUpload} />
           )}
 
-          {currentStep === 'select' && uploadedImage && (
+          {currentStep === 'select' && uploadedImage && imageId && (
             <AreaSelector
               imageUrl={uploadedImage}
+              imageId={imageId}
               onAreaSelected={handleAreaSelected}
               onBack={() => setCurrentStep('upload')}
             />

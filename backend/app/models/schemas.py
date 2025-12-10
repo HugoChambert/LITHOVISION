@@ -6,18 +6,36 @@ class ImageUploadResponse(BaseModel):
     image_url: str
     message: str
 
-class ProcessingRequest(BaseModel):
+class MaskRequest(BaseModel):
     image_id: str
-    mask_data: str
-    stone_material: Dict[str, Any]
 
-class ProcessingResponse(BaseModel):
-    job_id: str
+class MaskResponse(BaseModel):
+    mask_id: str
+    mask_url: str
+    message: str
+
+class DepthRequest(BaseModel):
+    image_id: str
+
+class DepthResponse(BaseModel):
+    depth_id: str
+    depth_url: str
+    message: str
+
+class GenerateRequest(BaseModel):
+    image_id: str
+    mask_id: str
+    stone_material: Dict[str, Any]
+    scale: Optional[float] = 1.0
+    orientation: Optional[int] = 0
+
+class GenerateResponse(BaseModel):
+    task_id: str
     status: str
     message: str
 
-class JobStatus(BaseModel):
-    job_id: str
+class TaskStatus(BaseModel):
+    task_id: str
     status: str
     progress: Optional[int] = None
     result_url: Optional[str] = None
