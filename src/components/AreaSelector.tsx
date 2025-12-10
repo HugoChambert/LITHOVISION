@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import * as api from '../lib/api';
 import './AreaSelector.css';
 
 interface AreaSelectorProps {
@@ -8,12 +9,15 @@ interface AreaSelectorProps {
   onBack: () => void;
 }
 
-function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
+function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [brushSize, setBrushSize] = useState(30);
-  const [mode, setMode] = useState<'draw' | 'erase'>('draw');
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentMask, setCurrentMask] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const scaleRef = useRef<number>(1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,171 +30,172 @@ function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
     img.onload = () => {
       const maxWidth = 800;
       const scale = Math.min(1, maxWidth / img.width);
+      scaleRef.current = scale;
 
       canvas.width = img.width * scale;
       canvas.height = img.height * scale;
 
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      if (overlayCanvasRef.current) {
+        overlayCanvasRef.current.width = canvas.width;
+        overlayCanvasRef.current.height = canvas.height;
+      }
+
+      imageRef.current = img;
       setCanvasReady(true);
     };
     img.src = imageUrl;
   }, [imageUrl]);
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
-    draw(e);
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing && e.type !== 'mousedown') return;
+  const handleCanvasClick = async (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isGenerating || !canvasReady) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const displayX = e.clientX - rect.left;
+    const displayY = e.clientY - rect.top;
 
-    ctx.globalCompositeOperation = mode === 'draw' ? 'source-over' : 'destination-out';
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
-    ctx.beginPath();
-    ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-    ctx.fill();
+    const imageX = Math.round(displayX / scaleRef.current);
+    const imageY = Math.round(displayY / scaleRef.current);
+
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      const response = await api.generateMask(imageId, imageX, imageY);
+
+      const maskImg = new Image();
+      maskImg.onload = () => {
+        const overlayCanvas = overlayCanvasRef.current;
+        if (!overlayCanvas) return;
+
+        const overlayCtx = overlayCanvas.getContext('2d');
+        if (!overlayCtx) return;
+
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        overlayCtx.globalAlpha = 0.5;
+        overlayCtx.fillStyle = '#3b82f6';
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = maskImg.width;
+        tempCanvas.height = maskImg.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        if (!tempCtx) return;
+
+        tempCtx.drawImage(maskImg, 0, 0);
+        const imageData = tempCtx.getImageData(0, 0, maskImg.width, maskImg.height);
+        const data = imageData.data;
+
+        overlayCtx.save();
+        overlayCtx.scale(scaleRef.current, scaleRef.current);
+
+        for (let y = 0; y < maskImg.height; y++) {
+          for (let x = 0; x < maskImg.width; x++) {
+            const i = (y * maskImg.width + x) * 4;
+            if (data[i] > 128) {
+              overlayCtx.fillRect(x, y, 1, 1);
+            }
+          }
+        }
+
+        overlayCtx.restore();
+      };
+
+      maskImg.src = `${import.meta.env.VITE_API_URL}${response.mask_url}`;
+      setCurrentMask(response.mask_url);
+    } catch (err) {
+      console.error('Error generating mask:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate mask');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleClear = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const overlayCanvas = overlayCanvasRef.current;
+    if (!overlayCanvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = overlayCanvas.getContext('2d');
     if (!ctx) return;
 
-    const img = new Image();
-    img.onload = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    };
-    img.src = imageUrl;
+    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    setCurrentMask(null);
   };
 
-  const handleContinue = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const handleContinue = async () => {
+    if (!currentMask) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    if (!tempCtx) return;
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const alpha = data[i + 3];
-      if (alpha > 0 && (data[i] === 59 || data[i + 1] === 130 || data[i + 2] === 246)) {
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
-        data[i + 3] = 255;
-      } else {
-        data[i] = 0;
-        data[i + 1] = 0;
-        data[i + 2] = 0;
-        data[i + 3] = 255;
-      }
+    try {
+      const maskUrl = `${import.meta.env.VITE_API_URL}${currentMask}`;
+      const response = await fetch(maskUrl);
+      const blob = await response.blob();
+      onAreaSelected(maskUrl, blob);
+    } catch (err) {
+      console.error('Error loading mask:', err);
+      setError('Failed to load mask data');
     }
-
-    tempCtx.putImageData(imageData, 0, 0);
-    const maskDataUrl = tempCanvas.toDataURL('image/png');
-
-    tempCanvas.toBlob((blob) => {
-      if (blob) {
-        onAreaSelected(maskDataUrl, blob);
-      }
-    }, 'image/png');
   };
 
   return (
     <div className="area-selector">
       <h2 className="section-title">Select the Area to Replace</h2>
       <p className="section-description">
-        Paint over the stone surface you want to replace. Use the brush to mark areas and eraser to refine.
+        Click on the stone surface you want to replace. AI will automatically detect the area.
       </p>
 
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
       <div className="selector-container">
-        <div className="canvas-wrapper">
+        <div className="canvas-wrapper" style={{ position: 'relative', cursor: isGenerating ? 'wait' : 'crosshair' }}>
           <canvas
             ref={canvasRef}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
             className="selection-canvas"
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          />
+          <canvas
+            ref={overlayCanvasRef}
+            onClick={handleCanvasClick}
+            className="selection-canvas"
+            style={{ position: 'absolute', top: 0, left: 0, pointerEvents: isGenerating ? 'none' : 'auto' }}
           />
           {!canvasReady && <div className="canvas-loading">Loading image...</div>}
+          {isGenerating && <div className="canvas-loading">Detecting area...</div>}
         </div>
 
         <div className="tools-panel">
           <div className="tool-group">
-            <label className="tool-label">Mode</label>
-            <div className="mode-buttons">
-              <button
-                className={`mode-btn ${mode === 'draw' ? 'active' : ''}`}
-                onClick={() => setMode('draw')}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 19l7-7 3 3-7 7-3-3z" />
-                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-                  <path d="M2 2l7.586 7.586" />
-                </svg>
-                Draw
-              </button>
-              <button
-                className={`mode-btn ${mode === 'erase' ? 'active' : ''}`}
-                onClick={() => setMode('erase')}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 20H7L3 16l6-6 5 5 5-5 1 1v9z" />
-                </svg>
-                Erase
-              </button>
-            </div>
+            <p className="tool-info">
+              Click on any surface to automatically detect and select it using AI segmentation.
+            </p>
           </div>
 
-          <div className="tool-group">
-            <label className="tool-label">Brush Size: {brushSize}px</label>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              value={brushSize}
-              onChange={(e) => setBrushSize(Number(e.target.value))}
-              className="brush-slider"
-            />
-          </div>
-
-          <button className="btn btn-secondary" onClick={handleClear}>
+          <button
+            className="btn btn-secondary"
+            onClick={handleClear}
+            disabled={!currentMask || isGenerating}
+          >
             Clear Selection
           </button>
         </div>
       </div>
 
       <div className="action-buttons">
-        <button className="btn btn-secondary" onClick={onBack}>
+        <button className="btn btn-secondary" onClick={onBack} disabled={isGenerating}>
           Back
         </button>
-        <button className="btn btn-primary" onClick={handleContinue}>
+        <button
+          className="btn btn-primary"
+          onClick={handleContinue}
+          disabled={!currentMask || isGenerating}
+        >
           Continue to Stone Selection
         </button>
       </div>

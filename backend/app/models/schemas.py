@@ -8,6 +8,8 @@ class ImageUploadResponse(BaseModel):
 
 class MaskRequest(BaseModel):
     image_id: str
+    click_x: float
+    click_y: float
 
 class MaskResponse(BaseModel):
     mask_id: str

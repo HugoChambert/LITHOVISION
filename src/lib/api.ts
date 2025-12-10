@@ -46,6 +46,29 @@ export async function uploadImage(file: File | Blob, filename?: string): Promise
   };
 }
 
+export async function generateMask(imageId: string, clickX: number, clickY: number): Promise<MaskResponse> {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  const response = await fetch(`${apiUrl}/mask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image_id: imageId,
+      click_x: clickX,
+      click_y: clickY
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to generate mask');
+  }
+
+  return response.json();
+}
+
 export async function uploadMask(maskBlob: Blob): Promise<UploadResponse> {
   const fileName = `mask_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
   const filePath = `masks/${fileName}`;

@@ -59,10 +59,7 @@ async def generate_mask(request: MaskRequest):
         image = Image.open(image_path).convert('RGB')
         image_np = np.array(image)
 
-        height, width = image_np.shape[:2]
-        center_x, center_y = width // 2, height // 2
-
-        point_coords = np.array([[center_x, center_y]])
+        point_coords = np.array([[request.click_x, request.click_y]])
         point_labels = np.array([1])
 
         sam_predictor = sam_segmenter.load_model()
