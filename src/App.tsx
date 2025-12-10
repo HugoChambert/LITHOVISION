@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { type StoneMaterial } from './lib/supabase';
 import * as api from './lib/api';
 import Header from './components/Header';
@@ -7,12 +7,15 @@ import AreaSelector from './components/AreaSelector';
 import StoneCatalog from './components/StoneCatalog';
 import PreviewPanel from './components/PreviewPanel';
 import AdminPanel from './components/AdminPanel';
+import AdminAuth from './components/AdminAuth';
 import './App.css';
 
 type Step = 'upload' | 'select' | 'choose-stone' | 'preview';
 
 function App() {
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageId, setImageId] = useState<string | null>(null);
@@ -112,19 +115,78 @@ function App() {
     setIsProcessing(false);
   };
 
+  const checkAuthentication = () => {
+    const session = sessionStorage.getItem('admin_session');
+    if (session) {
+      const sessionTime = parseInt(session);
+      const currentTime = Date.now();
+      const sessionDuration = 3600000;
+
+      if (currentTime - sessionTime < sessionDuration) {
+        setIsAuthenticated(true);
+        return true;
+      } else {
+        sessionStorage.removeItem('admin_session');
+      }
+    }
+    return false;
+  };
+
+  const handleAdminAccess = () => {
+    if (checkAuthentication()) {
+      setShowAdmin(true);
+    } else {
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+    setShowAdmin(true);
+  };
+
+  const handleAuthCancel = () => {
+    setShowAuthModal(false);
+  };
+
+  const handleAdminExit = () => {
+    setShowAdmin(false);
+  };
+
+  useEffect(() => {
+    checkAuthentication();
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        handleAdminAccess();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   return (
     <div className="app">
       <Header />
 
-      <button
-        className="admin-toggle"
-        onClick={() => setShowAdmin(!showAdmin)}
-        title={showAdmin ? 'Back to Main App' : 'Admin Panel'}
-      >
-        {showAdmin ? '← Back to App' : '⚙ Admin'}
-      </button>
+      {showAuthModal && (
+        <AdminAuth onSuccess={handleAuthSuccess} onCancel={handleAuthCancel} />
+      )}
 
-      {showAdmin ? (
+      {showAdmin && isAuthenticated && (
+        <button
+          className="admin-exit-btn"
+          onClick={handleAdminExit}
+          title="Exit Admin Panel"
+        >
+          ← Exit Admin
+        </button>
+      )}
+
+      {showAdmin && isAuthenticated ? (
         <main className="container main-content">
           <AdminPanel />
         </main>
