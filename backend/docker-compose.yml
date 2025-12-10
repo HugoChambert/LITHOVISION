@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_KEY=${VITE_SUPABASE_SUPABASE_ANON_KEY}
+    depends_on:
+      - redis
+
+  celery_worker:
+    build: .
+    command: celery -A app.celery_app worker --loglevel=info
+    volumes:
+      - ./uploads:/app/uploads
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_KEY=${VITE_SUPABASE_SUPABASE_ANON_KEY}
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
