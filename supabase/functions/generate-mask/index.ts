@@ -32,23 +32,34 @@ Deno.serve(async (req: Request) => {
       .from('stone-images')
       .getPublicUrl(image_id);
 
-    const imageResponse = await fetch(publicUrl);
-    const imageBlob = await imageResponse.blob();
-    const arrayBuffer = await imageBlob.arrayBuffer();
+    const maskCanvas = document.createElement('canvas');
+    const maskCtx = maskCanvas.getContext('2d')!;
     
-    const imageBitmap = await createImageBitmap(new Blob([arrayBuffer]));
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
     
-    const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(imageBitmap, 0, 0);
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = publicUrl;
+    });
     
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const maskData = new Uint8ClampedArray(imageData.data.length);
+    maskCanvas.width = img.width;
+    maskCanvas.height = img.height;
+    
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d')!;
+    tempCanvas.width = img.width;
+    tempCanvas.height = img.height;
+    tempCtx.drawImage(img, 0, 0);
+    
+    const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+    const maskData = new Uint8ClampedArray(imageData.data.length).fill(0);
     
     const tolerance = 30;
     const targetPixel = getPixel(imageData, click_x, click_y);
     
-    floodFill(imageData, maskData, click_x, click_y, targetPixel, tolerance);
+    floodFill(imageData, maskData, img.width, img.height, click_x, click_y, targetPixel, tolerance);
     
     for (let i = 0; i < maskData.length; i += 4) {
       const alpha = maskData[i + 3];
@@ -58,10 +69,12 @@ Deno.serve(async (req: Request) => {
       maskData[i + 3] = 255;
     }
     
-    const maskImageData = new ImageData(maskData, canvas.width, canvas.height);
-    ctx.putImageData(maskImageData, 0, 0);
+    const maskImageData = new ImageData(maskData, img.width, img.height);
+    maskCtx.putImageData(maskImageData, 0, 0);
     
-    const maskBlob = await canvas.convertToBlob({ type: 'image/png' });
+    const maskBlob = await new Promise<Blob>((resolve) => {
+      maskCanvas.toBlob((blob) => resolve(blob!), 'image/png');
+    });
     
     const fileName = `mask_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
     const filePath = `masks/${fileName}`;
@@ -126,13 +139,13 @@ function colorDistance(c1: [number, number, number], c2: [number, number, number
 function floodFill(
   imageData: ImageData,
   maskData: Uint8ClampedArray,
+  width: number,
+  height: number,
   x: number,
   y: number,
   targetColor: [number, number, number],
   tolerance: number
 ) {
-  const width = imageData.width;
-  const height = imageData.height;
   const visited = new Set<number>();
   const queue: [number, number][] = [[x, y]];
   

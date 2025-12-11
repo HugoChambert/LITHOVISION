@@ -9,7 +9,7 @@ interface AreaSelectorProps {
   onBack: () => void;
 }
 
-function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelectorProps) {
+function AreaSelector({ imageUrl, imageId: _imageId, onAreaSelected, onBack }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
@@ -75,48 +75,71 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
     setError(null);
 
     try {
-      const response = await api.generateMask(imageId, imageX, imageY);
+      const img = imageRef.current;
+      if (!img) return;
 
-      const maskImg = new Image();
-      maskImg.onload = () => {
-        const overlayCanvas = overlayCanvasRef.current;
-        if (!overlayCanvas) return;
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = img.width;
+      tempCanvas.height = img.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (!tempCtx) return;
 
-        const overlayCtx = overlayCanvas.getContext('2d');
-        if (!overlayCtx) return;
+      tempCtx.drawImage(img, 0, 0);
+      const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+      const maskData = new Uint8ClampedArray(imageData.data.length).fill(0);
 
-        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      const tolerance = 30;
+      const targetPixel = getPixel(imageData, imageX, imageY);
 
-        overlayCtx.globalAlpha = 0.5;
-        overlayCtx.fillStyle = '#3b82f6';
+      floodFill(imageData, maskData, img.width, img.height, imageX, imageY, targetPixel, tolerance);
 
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = maskImg.width;
-        tempCanvas.height = maskImg.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        if (!tempCtx) return;
+      for (let i = 0; i < maskData.length; i += 4) {
+        const alpha = maskData[i + 3];
+        maskData[i] = alpha;
+        maskData[i + 1] = alpha;
+        maskData[i + 2] = alpha;
+        maskData[i + 3] = 255;
+      }
 
-        tempCtx.drawImage(maskImg, 0, 0);
-        const imageData = tempCtx.getImageData(0, 0, maskImg.width, maskImg.height);
-        const data = imageData.data;
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = img.width;
+      maskCanvas.height = img.height;
+      const maskCtx = maskCanvas.getContext('2d');
+      if (!maskCtx) return;
 
-        overlayCtx.save();
-        overlayCtx.scale(scaleRef.current, scaleRef.current);
+      const maskImageData = new ImageData(maskData, img.width, img.height);
+      maskCtx.putImageData(maskImageData, 0, 0);
 
-        for (let y = 0; y < maskImg.height; y++) {
-          for (let x = 0; x < maskImg.width; x++) {
-            const i = (y * maskImg.width + x) * 4;
-            if (data[i] > 128) {
-              overlayCtx.fillRect(x, y, 1, 1);
-            }
+      const maskBlob = await new Promise<Blob>((resolve) => {
+        maskCanvas.toBlob((blob) => resolve(blob!), 'image/png');
+      });
+
+      const maskResponse = await api.uploadMask(maskBlob);
+
+      const overlayCanvas = overlayCanvasRef.current;
+      if (!overlayCanvas) return;
+
+      const overlayCtx = overlayCanvas.getContext('2d');
+      if (!overlayCtx) return;
+
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      overlayCtx.globalAlpha = 0.5;
+      overlayCtx.fillStyle = '#3b82f6';
+
+      overlayCtx.save();
+      overlayCtx.scale(scaleRef.current, scaleRef.current);
+
+      for (let y = 0; y < img.height; y++) {
+        for (let x = 0; x < img.width; x++) {
+          const i = (y * img.width + x) * 4;
+          if (maskData[i] > 128) {
+            overlayCtx.fillRect(x, y, 1, 1);
           }
         }
+      }
 
-        overlayCtx.restore();
-      };
-
-      maskImg.src = response.mask_url;
-      setCurrentMask(response.mask_url);
+      overlayCtx.restore();
+      setCurrentMask(maskResponse.image_url);
     } catch (err) {
       console.error('Error generating mask:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate mask');
@@ -124,6 +147,55 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
       setIsGenerating(false);
     }
   };
+
+  function getPixel(imageData: ImageData, x: number, y: number): [number, number, number] {
+    const i = (y * imageData.width + x) * 4;
+    return [imageData.data[i], imageData.data[i + 1], imageData.data[i + 2]];
+  }
+
+  function colorDistance(c1: [number, number, number], c2: [number, number, number]): number {
+    const dr = c1[0] - c2[0];
+    const dg = c1[1] - c2[1];
+    const db = c1[2] - c2[2];
+    return Math.sqrt(dr * dr + dg * dg + db * db);
+  }
+
+  function floodFill(
+    imageData: ImageData,
+    maskData: Uint8ClampedArray,
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+    targetColor: [number, number, number],
+    tolerance: number
+  ) {
+    const visited = new Set<number>();
+    const queue: [number, number][] = [[x, y]];
+
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift()!;
+
+      if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
+
+      const key = cy * width + cx;
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const currentColor = getPixel(imageData, cx, cy);
+      const distance = colorDistance(currentColor, targetColor);
+
+      if (distance <= tolerance) {
+        const i = (cy * width + cx) * 4;
+        maskData[i + 3] = 255;
+
+        queue.push([cx + 1, cy]);
+        queue.push([cx - 1, cy]);
+        queue.push([cx, cy + 1]);
+        queue.push([cx, cy - 1]);
+      }
+    }
+  }
 
   const handleClear = () => {
     const overlayCanvas = overlayCanvasRef.current;
