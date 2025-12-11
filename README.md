@@ -6,6 +6,15 @@ A production-ready web application for visualizing stone material replacements i
 
 This application is **fully serverless** and ready to deploy to Netlify, Vercel, or any static hosting platform. No GPU servers, Docker, or complex infrastructure required.
 
+## ⚡ Quick Setup Summary
+
+**What you need:**
+- ✅ Supabase (already configured)
+- ⚠️ **Azure OpenAI** - Required for AI image editing ([Get started →](#2-azure-openai-required-for-ai-processing-️))
+- 🔧 Replicate API - Optional, improves detection ([Get started →](#3-replicate-api-optional-for-enhanced-detection-))
+
+**Setup time:** ~10 minutes for Azure OpenAI, 2 minutes for Replicate (optional)
+
 ## Features
 
 ### Core Functionality
@@ -35,7 +44,9 @@ This application is **fully serverless** and ready to deploy to Netlify, Vercel,
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- Supabase account (free tier works)
+- Supabase account (already configured)
+- **Azure OpenAI account** (required for AI features)
+- Replicate account (optional, for enhanced detection)
 
 ### Installation
 
@@ -44,8 +55,27 @@ This application is **fully serverless** and ready to deploy to Netlify, Vercel,
 npm install
 ```
 
-2. **Environment variables are already configured**
-The `.env` file contains your Supabase credentials.
+2. **Configure APIs** ⚠️ IMPORTANT
+
+   Before the app will work, you need to set up Azure OpenAI:
+
+   a. Create Azure OpenAI resource at [portal.azure.com](https://portal.azure.com)
+   b. Deploy a DALL-E model
+   c. Add credentials to Supabase:
+      - Go to Supabase Dashboard → Edge Functions → Settings
+      - Add environment variables:
+        ```
+        AZURE_OPENAI_ENDPOINT=https://YOUR-RESOURCE.openai.azure.com
+        AZURE_OPENAI_KEY=your-api-key
+        AZURE_OPENAI_DEPLOYMENT=dall-e-3
+        ```
+
+   **Optional**: Add Replicate API for better detection:
+   ```
+   REPLICATE_API_TOKEN=r8_your_token
+   ```
+
+   📖 See [Required APIs & Configuration](#required-apis--configuration) section below for detailed steps.
 
 3. **Start development server**
 ```bash
@@ -117,48 +147,151 @@ Stores user's stone replacement projects:
 - `result_image_url` (text): Generated preview
 - `processing_status` (text): pending | processing | completed | failed
 
-## AI Processing
+## Required APIs & Configuration
 
-The application uses **Azure OpenAI Service** (Microsoft Copilot Designer) for intelligent stone replacement with realistic results.
+This application requires external APIs to function. Here's what you need to set up:
 
-### What Works Now
-- ✅ Image upload to Supabase Storage
-- ✅ Canvas-based area selection
-- ✅ Stone catalog selection with real-time filtering
-- ✅ Job tracking in database
-- ✅ Progress updates
-- ✅ **Real AI-powered image editing** via Azure OpenAI DALL-E
-- ✅ Intelligent lighting and perspective preservation
-- ✅ Material texture matching
+### 1. Supabase (Already Configured) ✅
 
-### Setup Required
+Your Supabase project is already configured in the `.env` file:
+- Database for stone catalog and project tracking
+- Storage for images and masks
+- Edge Functions for serverless processing
 
-To enable AI processing, you need to configure Azure OpenAI credentials. See [AZURE_OPENAI_SETUP.md](./AZURE_OPENAI_SETUP.md) for detailed setup instructions.
+**No action needed** - this is ready to use.
 
-**Quick Setup:**
-1. Create an Azure OpenAI resource
-2. Deploy a DALL-E model
-3. Add environment variables to Supabase Edge Functions:
-   - `AZURE_OPENAI_ENDPOINT`
-   - `AZURE_OPENAI_KEY`
-   - `AZURE_OPENAI_DEPLOYMENT`
+---
+
+### 2. Azure OpenAI (REQUIRED for AI Processing) ⚠️
+
+**Status**: Required for stone replacement functionality
+
+Azure OpenAI powers the intelligent image editing that replaces stone materials while preserving lighting and perspective.
+
+#### Setup Instructions:
+
+1. **Create Azure OpenAI Resource**
+   - Go to [Azure Portal](https://portal.azure.com)
+   - Create a new "Azure OpenAI" resource
+   - Wait for deployment (5-10 minutes)
+
+2. **Deploy DALL-E Model**
+   - Navigate to Azure OpenAI Studio
+   - Go to "Deployments" → "Create new deployment"
+   - Select model: `dall-e-3` or `dall-e-2`
+   - Name your deployment (e.g., `dall-e-3`)
+
+3. **Get Your Credentials**
+   - Go to your Azure OpenAI resource
+   - Click "Keys and Endpoint"
+   - Copy:
+     - Endpoint URL (e.g., `https://YOUR-RESOURCE.openai.azure.com`)
+     - API Key (Key 1)
+
+4. **Configure Supabase Edge Functions**
+
+   Add these environment variables to your Supabase project:
+
+   ```bash
+   # Go to: Supabase Dashboard → Edge Functions → Settings
+   AZURE_OPENAI_ENDPOINT=https://YOUR-RESOURCE.openai.azure.com
+   AZURE_OPENAI_KEY=your-api-key-here
+   AZURE_OPENAI_DEPLOYMENT=dall-e-3
+   ```
+
+#### Cost Estimate:
+- DALL-E 3: ~$0.04-0.08 per image generation
+- DALL-E 2: ~$0.02 per image generation
+
+📖 **Detailed Guide**: See [AZURE_OPENAI_SETUP.md](./AZURE_OPENAI_SETUP.md)
+
+---
+
+### 3. Replicate API (OPTIONAL for Enhanced Detection) 🔧
+
+**Status**: Optional enhancement - improves area detection quality
+
+Replicate provides SAM (Segment Anything Model) for AI-powered area detection. Without this, the system uses a smart fallback algorithm.
+
+#### Setup Instructions:
+
+1. **Create Replicate Account**
+   - Go to [replicate.com](https://replicate.com)
+   - Sign up for free account
+
+2. **Get API Token**
+   - Go to Account Settings → API Tokens
+   - Create a new token
+   - Copy the token (starts with `r8_`)
+
+3. **Add to Supabase Edge Functions**
+
+   ```bash
+   # Go to: Supabase Dashboard → Edge Functions → Settings
+   REPLICATE_API_TOKEN=r8_your_token_here
+   ```
+
+#### Cost Estimate:
+- SAM Model: ~$0.0005-0.001 per detection
+- Free tier: $10 credit (≈10,000 detections)
+
+#### Benefits:
+- **With Replicate**: Professional-grade object segmentation, handles complex textures
+- **Without Replicate**: Smart algorithm with adaptive tolerance (works well for most cases)
+
+---
+
+### API Configuration Checklist
+
+Before deploying to production, ensure you have:
+
+- [x] **Supabase** - Pre-configured in `.env`
+- [ ] **Azure OpenAI** - Required for AI image editing
+  - [ ] Resource created
+  - [ ] DALL-E model deployed
+  - [ ] Credentials added to Supabase Edge Functions
+- [ ] **Replicate** (Optional) - Enhanced area detection
+  - [ ] Account created
+  - [ ] API token generated
+  - [ ] Token added to Supabase Edge Functions
+
+---
 
 ### Alternative AI Services
 
-While Azure OpenAI is configured by default, you can also use:
+While Azure OpenAI is the default, you can modify the edge functions to use:
 
 1. **OpenAI API** (Direct)
-   - Similar to Azure but through OpenAI directly
-   - Modify edge function to use `api.openai.com`
+   - Endpoint: `api.openai.com`
+   - Models: DALL-E 2/3
+   - Pricing: Similar to Azure
 
 2. **Stability AI**
    - For Stable Diffusion inpainting
    - Lower cost alternative
+   - Requires code modifications
 
 3. **Self-Hosted ML** (For high volume)
    - Deploy `/backend` directory to GPU server
    - Full SAM + MiDaS + SDXL pipeline
    - See `backend/README.md` for details
+
+---
+
+## How It Works
+
+### AI Processing Pipeline
+
+1. **User clicks on surface** → `generate-mask` edge function
+   - If Replicate configured: SAM detects entire surface
+   - If not: Smart algorithm with adaptive tolerance
+
+2. **User selects stone material** → `process-ai-image` edge function
+   - Azure OpenAI DALL-E replaces the masked area
+   - Preserves lighting, shadows, and perspective
+   - Returns processed image
+
+3. **Results displayed** → User can compare and download
 
 ## Responsive Design
 
