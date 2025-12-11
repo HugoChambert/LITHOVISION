@@ -88,10 +88,13 @@ function AreaSelector({ imageUrl, imageId: _imageId, onAreaSelected, onBack }: A
       const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
       const maskData = new Uint8ClampedArray(imageData.data.length).fill(0);
 
-      const tolerance = 30;
       const targetPixel = getPixel(imageData, imageX, imageY);
+      const tolerance = calculateAdaptiveTolerance(imageData, imageX, imageY, img.width, img.height);
 
       floodFill(imageData, maskData, img.width, img.height, imageX, imageY, targetPixel, tolerance);
+
+      morphologicalClose(maskData, img.width, img.height, 2);
+      removeSmallRegions(maskData, img.width, img.height, 50);
 
       for (let i = 0; i < maskData.length; i += 4) {
         const alpha = maskData[i + 3];
@@ -157,7 +160,140 @@ function AreaSelector({ imageUrl, imageId: _imageId, onAreaSelected, onBack }: A
     const dr = c1[0] - c2[0];
     const dg = c1[1] - c2[1];
     const db = c1[2] - c2[2];
-    return Math.sqrt(dr * dr + dg * dg + db * db);
+    return Math.sqrt(2 * dr * dr + 4 * dg * dg + 3 * db * db);
+  }
+
+  function calculateAdaptiveTolerance(
+    imageData: ImageData,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ): number {
+    const sampleRadius = 5;
+    const samples: [number, number, number][] = [];
+
+    for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
+      for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
+        const sx = x + dx;
+        const sy = y + dy;
+        if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+          samples.push(getPixel(imageData, sx, sy));
+        }
+      }
+    }
+
+    const centerColor = getPixel(imageData, x, y);
+    let totalVariance = 0;
+
+    for (const sample of samples) {
+      totalVariance += colorDistance(centerColor, sample);
+    }
+
+    const avgVariance = totalVariance / samples.length;
+    const baseTolerance = 35;
+    const adaptiveTolerance = Math.max(25, Math.min(60, baseTolerance + avgVariance * 0.5));
+
+    return adaptiveTolerance;
+  }
+
+  function morphologicalClose(
+    maskData: Uint8ClampedArray,
+    width: number,
+    height: number,
+    radius: number
+  ) {
+    const temp = new Uint8ClampedArray(maskData.length);
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let maxVal = 0;
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              const i = (ny * width + nx) * 4;
+              maxVal = Math.max(maxVal, maskData[i + 3]);
+            }
+          }
+        }
+        const i = (y * width + x) * 4;
+        temp[i + 3] = maxVal;
+      }
+    }
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let minVal = 255;
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              const i = (ny * width + nx) * 4;
+              minVal = Math.min(minVal, temp[i + 3]);
+            }
+          }
+        }
+        const i = (y * width + x) * 4;
+        maskData[i + 3] = minVal;
+      }
+    }
+  }
+
+  function removeSmallRegions(
+    maskData: Uint8ClampedArray,
+    width: number,
+    height: number,
+    minSize: number
+  ) {
+    const visited = new Uint8Array(width * height);
+    const regions: { size: number; pixels: number[] }[] = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const idx = y * width + x;
+
+        if (maskData[i + 3] > 0 && !visited[idx]) {
+          const region: number[] = [];
+          const queue: [number, number][] = [[x, y]];
+
+          while (queue.length > 0) {
+            const [cx, cy] = queue.shift()!;
+            const cidx = cy * width + cx;
+
+            if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
+            if (visited[cidx]) continue;
+
+            const ci = (cy * width + cx) * 4;
+            if (maskData[ci + 3] === 0) continue;
+
+            visited[cidx] = 1;
+            region.push(cidx);
+
+            queue.push([cx + 1, cy]);
+            queue.push([cx - 1, cy]);
+            queue.push([cx, cy + 1]);
+            queue.push([cx, cy - 1]);
+          }
+
+          regions.push({ size: region.length, pixels: region });
+        }
+      }
+    }
+
+    regions.sort((a, b) => b.size - a.size);
+
+    for (let i = 1; i < regions.length; i++) {
+      if (regions[i].size < minSize) {
+        for (const idx of regions[i].pixels) {
+          const pi = idx * 4;
+          maskData[pi + 3] = 0;
+        }
+      }
+    }
   }
 
   function floodFill(
