@@ -5,6 +5,43 @@
   position: relative;
 }
 
+.user-actions {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+
+.user-btn {
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #1e293b;
+}
+
+.user-btn:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.user-btn.primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.user-btn.primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .admin-exit-btn {
   position: fixed;
   top: var(--spacing-lg);

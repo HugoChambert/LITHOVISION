@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { validateImage, optimizeImage, formatFileSize } from '../lib/fileUtils';
 import './ImageUpload.css';
 
 interface ImageUploadProps {
@@ -9,6 +10,9 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -37,14 +41,45 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
     }
   };
 
-  const processFile = (file: File) => {
-    setCurrentFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setPreviewUrl(result);
-    };
-    reader.readAsDataURL(file);
+  const processFile = async (file: File) => {
+    setError(null);
+    setIsProcessing(true);
+    setUploadProgress(10);
+
+    try {
+      const validation = await validateImage(file);
+      setUploadProgress(30);
+
+      if (!validation.valid) {
+        setError(validation.error || 'Invalid file');
+        setIsProcessing(false);
+        return;
+      }
+
+      setUploadProgress(50);
+      const optimizedBlob = await optimizeImage(file);
+      setUploadProgress(70);
+
+      const optimizedFile = new File([optimizedBlob], file.name, {
+        type: file.type,
+      });
+
+      setCurrentFile(optimizedFile);
+      setUploadProgress(90);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setPreviewUrl(result);
+        setUploadProgress(100);
+        setIsProcessing(false);
+      };
+      reader.readAsDataURL(optimizedFile);
+    } catch (err) {
+      setError('Failed to process image. Please try again.');
+      setIsProcessing(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleContinue = () => {
@@ -56,6 +91,9 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
   const handleReset = () => {
     setPreviewUrl(null);
     setCurrentFile(null);
+    setError(null);
+    setIsProcessing(false);
+    setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -69,7 +107,13 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
         Best results with well-lit, front-facing shots.
       </p>
 
-      {!previewUrl ? (
+      {error && (
+        <div className="upload-error">
+          {error}
+        </div>
+      )}
+
+      {!previewUrl && !isProcessing ? (
         <div
           className={`upload-zone ${isDragging ? 'dragging' : ''}`}
           onDragOver={handleDragOver}
@@ -96,9 +140,24 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
             style={{ display: 'none' }}
           />
         </div>
+      ) : isProcessing ? (
+        <div className="processing-upload">
+          <div className="processing-spinner"></div>
+          <p>Processing your image...</p>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${uploadProgress}%` }}></div>
+          </div>
+          <p className="progress-text">{uploadProgress}%</p>
+        </div>
       ) : (
         <div className="preview-container">
-          <img src={previewUrl} alt="Preview" className="preview-image" />
+          <img src={previewUrl!} alt="Preview" className="preview-image" />
+          {currentFile && (
+            <div className="file-info">
+              <span className="file-name">{currentFile.name}</span>
+              <span className="file-size">{formatFileSize(currentFile.size)}</span>
+            </div>
+          )}
           <div className="preview-actions">
             <button className="btn btn-secondary" onClick={handleReset}>
               Choose Different Image

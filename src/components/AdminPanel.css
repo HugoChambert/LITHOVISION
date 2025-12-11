@@ -8,14 +8,38 @@
 .admin-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: var(--spacing-xl);
+}
+
+.admin-header > div {
+  flex: 1;
 }
 
 .admin-header h2 {
   font-size: 28px;
   font-weight: 600;
   color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.admin-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.admin-stats .stat {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.admin-stats .stat.active {
+  color: #10b981;
+}
+
+.admin-stats .stat.inactive {
+  color: #94a3b8;
 }
 
 .stone-form {
@@ -88,11 +112,61 @@
   padding: var(--spacing-xl);
 }
 
-.stones-list h3 {
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--spacing-lg);
+  gap: 20px;
+}
+
+.stones-list h3 {
   font-size: 20px;
   font-weight: 600;
   color: var(--color-text);
+  margin: 0;
+}
+
+.search-filter-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  min-width: 200px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.stones-count {
+  margin-bottom: var(--spacing-md);
+  font-size: 14px;
+  color: #64748b;
 }
 
 .stones-table {

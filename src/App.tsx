@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { type StoneMaterial } from './lib/supabase';
 import { supabase } from './lib/supabase';
+import { useAuth } from './contexts/AuthContext';
 import * as api from './lib/api';
+import * as sessionManager from './lib/sessionManager';
+import { showToast } from './components/ToastContainer';
 import Header from './components/Header';
 import ImageUpload from './components/ImageUpload';
 import AreaSelector from './components/AreaSelector';
@@ -9,13 +12,18 @@ import StoneCatalog from './components/StoneCatalog';
 import PreviewPanel from './components/PreviewPanel';
 import AdminPanel from './components/AdminPanel';
 import AdminAuth from './components/AdminAuth';
+import UserAuth from './components/UserAuth';
+import ProjectGallery from './components/ProjectGallery';
 import './App.css';
 
 type Step = 'upload' | 'select' | 'choose-stone' | 'preview';
 
 function App() {
+  const { user, signOut } = useAuth();
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUserAuth, setShowUserAuth] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>('upload');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -25,20 +33,74 @@ function App() {
   const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSession();
+    checkAuthentication();
+
+    const handleKeyPress = async (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        await handleAdminAccess();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentStep !== 'upload' || uploadedImage) {
+      saveSession();
+    }
+  }, [currentStep, uploadedImage, imageId, maskData, maskId, selectedStone, previewImage]);
+
+  const loadSession = () => {
+    if (sessionManager.hasStoredSession()) {
+      const session = sessionManager.loadSessionLocal();
+      setCurrentStep(session.currentStep);
+      setUploadedImage(session.uploadedImage);
+      setImageId(session.imageId);
+      setMaskData(session.maskData);
+      setMaskId(session.maskId);
+      setSelectedStone(session.selectedStone);
+      setPreviewImage(session.previewImage);
+    }
+  };
+
+  const saveSession = () => {
+    sessionManager.syncSession({
+      currentStep,
+      uploadedImage,
+      imageId,
+      maskData,
+      maskId,
+      selectedStone,
+      previewImage,
+    });
+  };
+
+  const handleBeforeUnload = () => {
+    saveSession();
+  };
 
   const handleImageUpload = async (imageUrl: string, file: File) => {
     setUploadedImage(imageUrl);
-    setUploadError(null);
 
     try {
       const response = await api.uploadImage(file);
       setImageId(response.image_id);
       setCurrentStep('select');
+      showToast('Image uploaded successfully', 'success');
     } catch (error) {
       console.error('Error uploading image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image. Please try again.';
-      setUploadError(errorMessage);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
+      showToast(errorMessage, 'error');
       setUploadedImage(null);
     }
   };
@@ -50,15 +112,16 @@ function App() {
       const response = await api.uploadMask(maskBlob);
       setMaskId(response.image_id);
       setCurrentStep('choose-stone');
+      showToast('Area selected successfully', 'success');
     } catch (error) {
       console.error('Error uploading mask:', error);
-      alert('Failed to upload mask. Please try again.');
+      showToast('Failed to upload mask', 'error');
     }
   };
 
   const handleStoneSelected = async (stone: StoneMaterial) => {
     if (!imageId || !maskId) {
-      alert('Missing image or mask data');
+      showToast('Missing image or mask data', 'error');
       return;
     }
 
@@ -81,6 +144,7 @@ function App() {
             setPreviewImage(api.getImageUrl(status.result_url));
             setIsProcessing(false);
             clearInterval(pollInterval);
+            showToast('Preview generated successfully', 'success');
           } else if (status.status === 'failed') {
             throw new Error(status.error || 'Processing failed');
           }
@@ -88,7 +152,7 @@ function App() {
           console.error('Error checking task status:', error);
           setIsProcessing(false);
           clearInterval(pollInterval);
-          alert('Failed to process image. Please try again.');
+          showToast('Failed to process image', 'error');
         }
       }, 2000);
 
@@ -96,13 +160,12 @@ function App() {
         clearInterval(pollInterval);
         if (isProcessing) {
           setIsProcessing(false);
-          alert('Processing timeout. Please try again.');
+          showToast('Processing timeout', 'error');
         }
       }, 300000);
-
     } catch (error) {
       console.error('Error processing image:', error);
-      alert('Failed to start processing. Please try again.');
+      showToast('Failed to start processing', 'error');
       setIsProcessing(false);
     }
   };
@@ -116,6 +179,7 @@ function App() {
     setSelectedStone(null);
     setPreviewImage(null);
     setIsProcessing(false);
+    sessionManager.clearSessionLocal();
   };
 
   const checkAuthentication = async () => {
@@ -179,26 +243,44 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  useEffect(() => {
-    checkAuthentication();
-
-    const handleKeyPress = async (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-        e.preventDefault();
-        await handleAdminAccess();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
+  const handleUserSignOut = async () => {
+    await signOut();
+    showToast('Signed out successfully', 'success');
+  };
 
   return (
     <div className="app">
       <Header />
 
+      {!showAdmin && (
+        <div className="user-actions">
+          {user ? (
+            <>
+              <button className="user-btn" onClick={() => setShowGallery(true)}>
+                My Projects
+              </button>
+              <button className="user-btn" onClick={handleUserSignOut}>
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <button className="user-btn primary" onClick={() => setShowUserAuth(true)}>
+              Sign In
+            </button>
+          )}
+        </div>
+      )}
+
       {showAuthModal && (
         <AdminAuth onSuccess={handleAuthSuccess} onCancel={handleAuthCancel} />
+      )}
+
+      {showUserAuth && (
+        <UserAuth onClose={() => setShowUserAuth(false)} />
+      )}
+
+      {showGallery && user && (
+        <ProjectGallery onClose={() => setShowGallery(false)} />
       )}
 
       {showAdmin && isAuthenticated && (
@@ -217,71 +299,59 @@ function App() {
         </main>
       ) : (
         <main className="container main-content">
-        <div className="workflow-steps">
-          <div className={`step ${currentStep === 'upload' ? 'active' : ''} ${uploadedImage ? 'completed' : ''}`}>
-            <div className="step-number">1</div>
-            <div className="step-label">Upload Photo</div>
+          <div className="workflow-steps">
+            <div className={`step ${currentStep === 'upload' ? 'active' : ''} ${uploadedImage ? 'completed' : ''}`}>
+              <div className="step-number">1</div>
+              <div className="step-label">Upload Photo</div>
+            </div>
+            <div className={`step ${currentStep === 'select' ? 'active' : ''} ${maskData ? 'completed' : ''}`}>
+              <div className="step-number">2</div>
+              <div className="step-label">Select Area</div>
+            </div>
+            <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStone ? 'completed' : ''}`}>
+              <div className="step-number">3</div>
+              <div className="step-label">Choose Stone</div>
+            </div>
+            <div className={`step ${currentStep === 'preview' ? 'active' : ''}`}>
+              <div className="step-number">4</div>
+              <div className="step-label">Preview</div>
+            </div>
           </div>
-          <div className={`step ${currentStep === 'select' ? 'active' : ''} ${maskData ? 'completed' : ''}`}>
-            <div className="step-number">2</div>
-            <div className="step-label">Select Area</div>
-          </div>
-          <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStone ? 'completed' : ''}`}>
-            <div className="step-number">3</div>
-            <div className="step-label">Choose Stone</div>
-          </div>
-          <div className={`step ${currentStep === 'preview' ? 'active' : ''}`}>
-            <div className="step-number">4</div>
-            <div className="step-label">Preview</div>
-          </div>
-        </div>
 
-        <div className="workflow-content">
-          {currentStep === 'upload' && (
-            <>
-              {uploadError && (
-                <div style={{
-                  padding: '16px',
-                  marginBottom: '24px',
-                  backgroundColor: '#fee2e2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                  color: '#dc2626'
-                }}>
-                  <strong>Error:</strong> {uploadError}
-                </div>
-              )}
+          <div className="workflow-content">
+            {currentStep === 'upload' && (
               <ImageUpload onImageUpload={handleImageUpload} />
-            </>
-          )}
+            )}
 
-          {currentStep === 'select' && uploadedImage && imageId && (
-            <AreaSelector
-              imageUrl={uploadedImage}
-              imageId={imageId}
-              onAreaSelected={handleAreaSelected}
-              onBack={() => setCurrentStep('upload')}
-            />
-          )}
+            {currentStep === 'select' && uploadedImage && imageId && (
+              <AreaSelector
+                imageUrl={uploadedImage}
+                imageId={imageId}
+                onAreaSelected={handleAreaSelected}
+                onBack={() => setCurrentStep('upload')}
+              />
+            )}
 
-          {currentStep === 'choose-stone' && (
-            <StoneCatalog
-              onStoneSelected={handleStoneSelected}
-              onBack={() => setCurrentStep('select')}
-            />
-          )}
+            {currentStep === 'choose-stone' && (
+              <StoneCatalog
+                onStoneSelected={handleStoneSelected}
+                onBack={() => setCurrentStep('select')}
+              />
+            )}
 
-          {currentStep === 'preview' && (
-            <PreviewPanel
-              originalImage={uploadedImage}
-              previewImage={previewImage}
-              selectedStone={selectedStone}
-              isProcessing={isProcessing}
-              onReset={handleReset}
-            />
-          )}
-        </div>
-      </main>
+            {currentStep === 'preview' && (
+              <PreviewPanel
+                originalImage={uploadedImage}
+                previewImage={previewImage}
+                selectedStone={selectedStone}
+                isProcessing={isProcessing}
+                onReset={handleReset}
+                imageId={imageId}
+                maskId={maskId}
+              />
+            )}
+          </div>
+        </main>
       )}
     </div>
   );

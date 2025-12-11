@@ -7,6 +7,10 @@ function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingStone, setEditingStone] = useState<StoneMaterial | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
 
   const [formData, setFormData] = useState({
     name: '',
@@ -24,6 +28,15 @@ function AdminPanel() {
   useEffect(() => {
     fetchStones();
   }, []);
+
+  useEffect(() => {
+    const active = stones.filter((s) => s.is_active).length;
+    setStats({
+      total: stones.length,
+      active,
+      inactive: stones.length - active,
+    });
+  }, [stones]);
 
   const fetchStones = async () => {
     try {
@@ -124,6 +137,16 @@ function AdminPanel() {
     setShowForm(false);
   };
 
+  const filteredStones = stones.filter((stone) => {
+    const matchesSearch = stone.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      stone.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === 'all' || stone.type === filterType;
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'active' && stone.is_active) ||
+      (filterStatus === 'inactive' && !stone.is_active);
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
   if (loading) {
     return <div className="admin-panel">Loading...</div>;
   }
@@ -131,7 +154,14 @@ function AdminPanel() {
   return (
     <div className="admin-panel">
       <div className="admin-header">
-        <h2>Stone Materials Admin</h2>
+        <div>
+          <h2>Stone Materials Admin</h2>
+          <div className="admin-stats">
+            <span className="stat">Total: {stats.total}</span>
+            <span className="stat active">Active: {stats.active}</span>
+            <span className="stat inactive">Inactive: {stats.inactive}</span>
+          </div>
+        </div>
         <button
           className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
@@ -265,9 +295,47 @@ function AdminPanel() {
       )}
 
       <div className="stones-list">
-        <h3>Existing Stone Materials</h3>
+        <div className="list-header">
+          <h3>Existing Stone Materials</h3>
+
+          <div className="search-filter-controls">
+            <input
+              type="text"
+              placeholder="Search stones..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Types</option>
+              <option value="granite">Granite</option>
+              <option value="marble">Marble</option>
+              <option value="quartz">Quartz</option>
+            </select>
+
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="stones-count">
+          Showing {filteredStones.length} of {stones.length} materials
+        </div>
+
         <div className="stones-table">
-          {stones.map((stone) => (
+          {filteredStones.map((stone) => (
             <div key={stone.id} className="stone-row">
               {stone.preview_image_url && (
                 <img
