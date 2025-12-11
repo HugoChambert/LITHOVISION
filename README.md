@@ -27,7 +27,8 @@ This application is **fully serverless** and ready to deploy to Netlify, Vercel,
 - **Storage**: Supabase Storage
 - **Authentication**: Supabase Auth
 - **Styling**: Custom CSS with design system
-- **AI Integration**: Ready for Replicate, Stability AI, or self-hosted ML
+- **AI Integration**: Azure OpenAI (Microsoft Copilot Designer) for image editing
+- **Responsive Design**: Mobile, tablet, and desktop optimized
 
 ## Quick Start
 
@@ -116,89 +117,59 @@ Stores user's stone replacement projects:
 - `result_image_url` (text): Generated preview
 - `processing_status` (text): pending | processing | completed | failed
 
-## Current Processing Status
+## AI Processing
 
-The application currently uses **simulated AI processing** for demonstration purposes. This allows you to test the complete workflow without requiring expensive GPU infrastructure.
+The application uses **Azure OpenAI Service** (Microsoft Copilot Designer) for intelligent stone replacement with realistic results.
 
 ### What Works Now
 - ✅ Image upload to Supabase Storage
 - ✅ Canvas-based area selection
-- ✅ Stone catalog selection
+- ✅ Stone catalog selection with real-time filtering
 - ✅ Job tracking in database
 - ✅ Progress updates
-- ⚠️ Simulated result (placeholder image)
+- ✅ **Real AI-powered image editing** via Azure OpenAI DALL-E
+- ✅ Intelligent lighting and perspective preservation
+- ✅ Material texture matching
 
-### Adding Real AI Processing
+### Setup Required
 
-The architecture is ready for real AI integration. Choose from:
+To enable AI processing, you need to configure Azure OpenAI credentials. See [AZURE_OPENAI_SETUP.md](./AZURE_OPENAI_SETUP.md) for detailed setup instructions.
 
-1. **External APIs** (Recommended for MVP)
-   - Replicate.com (~$0.01-0.05 per image)
-   - Stability AI API
-   - RunPod Serverless
+**Quick Setup:**
+1. Create an Azure OpenAI resource
+2. Deploy a DALL-E model
+3. Add environment variables to Supabase Edge Functions:
+   - `AZURE_OPENAI_ENDPOINT`
+   - `AZURE_OPENAI_KEY`
+   - `AZURE_OPENAI_DEPLOYMENT`
 
-2. **Self-Hosted ML** (For high volume)
+### Alternative AI Services
+
+While Azure OpenAI is configured by default, you can also use:
+
+1. **OpenAI API** (Direct)
+   - Similar to Azure but through OpenAI directly
+   - Modify edge function to use `api.openai.com`
+
+2. **Stability AI**
+   - For Stable Diffusion inpainting
+   - Lower cost alternative
+
+3. **Self-Hosted ML** (For high volume)
    - Deploy `/backend` directory to GPU server
    - Full SAM + MiDaS + SDXL pipeline
    - See `backend/README.md` for details
 
-## Integrating External AI APIs
+## Responsive Design
 
-Update `src/lib/api.ts` to call real AI services:
+The application is fully responsive and optimized for all screen sizes:
 
-### Option 1: Replicate API
+- **Desktop** (1024px+): Full multi-column layouts with side panels
+- **Tablet** (768px-1024px): Adjusted layouts with stacked sections
+- **Mobile** (640px-768px): Single-column layouts, full-width buttons
+- **Small Mobile** (480px-640px): Compact UI, optimized touch targets
 
-```typescript
-// In supabase/functions/process-stone-replacement/index.ts
-
-async function samSegmentation(imageUrl: string, maskData: string): Promise<string> {
-  const response = await fetch('https://api.replicate.com/v1/predictions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Token ${Deno.env.get('REPLICATE_API_TOKEN')}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      version: 'sam-model-version-id',
-      input: {
-        image: imageUrl,
-        mask: maskData,
-      },
-    }),
-  });
-
-  const result = await response.json();
-  return result.output;
-}
-```
-
-### Option 2: Hugging Face API
-
-```typescript
-async function depthEstimation(imageUrl: string): Promise<string> {
-  const response = await fetch(
-    'https://api-inference.huggingface.co/models/Intel/dpt-large',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('HF_API_TOKEN')}`,
-      },
-      body: imageUrl,
-    }
-  );
-
-  const blob = await response.blob();
-  return blob;
-}
-```
-
-### Option 3: Custom Hosted Models
-
-Deploy your own models using:
-- Modal.com
-- RunPod
-- AWS SageMaker
-- Google Cloud AI Platform
+All components adapt seamlessly across devices with proper spacing, typography, and interactive elements.
 
 ## Getting Started
 

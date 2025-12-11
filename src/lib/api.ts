@@ -116,43 +116,107 @@ export async function generateStoneReplacement(
     throw new Error(`Failed to create processing job: ${error.message}`);
   }
 
-  simulateProcessing(data.id);
+  processWithAI(data.id, imageId, maskId, stoneMaterial);
 
   return { task_id: data.id };
 }
 
-async function simulateProcessing(jobId: string) {
-  await new Promise(resolve => setTimeout(resolve, 1000));
+async function processWithAI(jobId: string, imageId: string, maskId: string, stoneMaterial: any) {
+  try {
+    await supabase
+      .from('processing_jobs')
+      .update({ status: 'processing', progress: 10 })
+      .eq('id', jobId);
 
-  await supabase
-    .from('processing_jobs')
-    .update({ status: 'processing', progress: 25 })
-    .eq('id', jobId);
+    const originalImageUrl = getImageUrl(imageId);
+    const maskImageUrl = getImageUrl(maskId);
 
-  await new Promise(resolve => setTimeout(resolve, 1500));
+    await supabase
+      .from('processing_jobs')
+      .update({ status: 'processing', progress: 20 })
+      .eq('id', jobId);
 
-  await supabase
-    .from('processing_jobs')
-    .update({ status: 'processing', progress: 50 })
-    .eq('id', jobId);
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-ai-image`;
 
-  await new Promise(resolve => setTimeout(resolve, 1500));
+    const { data: { session } } = await supabase.auth.getSession();
 
-  await supabase
-    .from('processing_jobs')
-    .update({ status: 'processing', progress: 75 })
-    .eq('id', jobId);
+    await supabase
+      .from('processing_jobs')
+      .update({ status: 'processing', progress: 30 })
+      .eq('id', jobId);
 
-  await new Promise(resolve => setTimeout(resolve, 1000));
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        originalImageUrl,
+        maskImageUrl,
+        selectedStone: stoneMaterial,
+        adjustments: stoneMaterial.adjustments || {
+          brightness: 1.0,
+          contrast: 1.0,
+          scale: 1.0
+        }
+      })
+    });
 
-  await supabase
-    .from('processing_jobs')
-    .update({
-      status: 'completed',
-      progress: 100,
-      result_url: 'https://via.placeholder.com/800x600/4a5568/ffffff?text=AI+Processing+Complete'
-    })
-    .eq('id', jobId);
+    await supabase
+      .from('processing_jobs')
+      .update({ status: 'processing', progress: 80 })
+      .eq('id', jobId);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'AI processing failed');
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'AI processing failed');
+    }
+
+    const resultBlob = await fetch(`data:image/png;base64,${result.resultImageBase64}`).then(r => r.blob());
+    const resultFileName = `result_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+    const resultFilePath = `results/${resultFileName}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('stone-images')
+      .upload(resultFilePath, resultBlob, {
+        contentType: 'image/png',
+        upsert: false
+      });
+
+    if (uploadError) {
+      throw new Error(`Failed to upload result: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('stone-images')
+      .getPublicUrl(uploadData.path);
+
+    await supabase
+      .from('processing_jobs')
+      .update({
+        status: 'completed',
+        progress: 100,
+        result_url: publicUrl
+      })
+      .eq('id', jobId);
+
+  } catch (error) {
+    console.error('AI processing error:', error);
+    await supabase
+      .from('processing_jobs')
+      .update({
+        status: 'failed',
+        error_message: error instanceof Error ? error.message : 'Unknown error occurred'
+      })
+      .eq('id', jobId);
+  }
 }
 
 export async function getTaskStatus(taskId: string): Promise<TaskStatus> {
