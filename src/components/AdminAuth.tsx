@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
 import './AdminAuth.css';
 
 interface AdminAuthProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://0ec90b57d6e95fcbda19832f.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJib2x0IiwicmVmIjoiMGVjOTBiNTdkNmU5NWZjYmRhMTk4MzJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODE1NzQsImV4cCI6MTc1ODg4MTU3NH0.9I8-U0x86Ak8t2DGaIk0HfvTSLsAyzdnz-Nw00mMkKw';
 
 function AdminAuth({ onSuccess, onCancel }: AdminAuthProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -15,11 +17,24 @@ function AdminAuth({ onSuccess, onCancel }: AdminAuthProps) {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const checkIfFirstAdmin = async () => {
-    const { count } = await supabase
-      .from('admin_users')
-      .select('*', { count: 'exact', head: true });
-    return count === 0;
+  const callAdminAuth = async (action: 'login' | 'signup') => {
+    const apiUrl = `${SUPABASE_URL}/functions/v1/admin-auth`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action, email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Authentication failed');
+    }
+
+    return data;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,33 +43,10 @@ function AdminAuth({ onSuccess, onCancel }: AdminAuthProps) {
     setIsProcessing(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('No user data returned');
-      }
-
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (adminError) throw adminError;
-
-      if (!adminData) {
-        await supabase.auth.signOut();
-        throw new Error('Access denied. You are not an authorized admin.');
-      }
+      const data = await callAdminAuth('login');
 
       sessionStorage.setItem('admin_session', Date.now().toString());
-      sessionStorage.setItem('admin_user_id', authData.user.id);
+      sessionStorage.setItem('admin_user_id', data.userId);
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -81,35 +73,10 @@ function AdminAuth({ onSuccess, onCancel }: AdminAuthProps) {
     setIsProcessing(true);
 
     try {
-      const firstAdmin = await checkIfFirstAdmin();
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('No user data returned');
-      }
-
-      const { error: insertError } = await supabase
-        .from('admin_users')
-        .insert({
-          id: authData.user.id,
-          email: authData.user.email,
-          created_by: firstAdmin ? null : authData.user.id,
-          is_active: true,
-        });
-
-      if (insertError) {
-        await supabase.auth.signOut();
-        throw insertError;
-      }
+      const data = await callAdminAuth('signup');
 
       sessionStorage.setItem('admin_session', Date.now().toString());
-      sessionStorage.setItem('admin_user_id', authData.user.id);
+      sessionStorage.setItem('admin_user_id', data.userId);
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
