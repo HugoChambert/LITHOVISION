@@ -9,11 +9,10 @@ This application is **fully serverless** and ready to deploy to Netlify, Vercel,
 ## ⚡ Quick Setup Summary
 
 **What you need:**
-- ✅ Supabase (already configured)
+- ✅ Supabase (already configured) - All data and storage
 - ⚠️ **Azure OpenAI** - Required for AI image editing ([Get started →](#2-azure-openai-required-for-ai-processing-️))
-- 🔧 Replicate API - Optional, improves detection ([Get started →](#3-replicate-api-optional-for-enhanced-detection-))
 
-**Setup time:** ~10 minutes for Azure OpenAI, 2 minutes for Replicate (optional)
+**Setup time:** ~10 minutes
 
 ## Features
 
@@ -46,7 +45,6 @@ This application is **fully serverless** and ready to deploy to Netlify, Vercel,
 - npm or yarn
 - Supabase account (already configured)
 - **Azure OpenAI account** (required for AI features)
-- Replicate account (optional, for enhanced detection)
 
 ### Installation
 
@@ -70,12 +68,7 @@ npm install
         AZURE_OPENAI_DEPLOYMENT=dall-e-3
         ```
 
-   **Optional**: Add Replicate API for better detection:
-   ```
-   REPLICATE_API_TOKEN=r8_your_token
-   ```
-
-   📖 See [Required APIs & Configuration](#required-apis--configuration) section below for detailed steps.
+   📖 See [AZURE_OPENAI_SETUP.md](./AZURE_OPENAI_SETUP.md) for detailed instructions.
 
 3. **Start development server**
 ```bash
@@ -207,40 +200,6 @@ Azure OpenAI powers the intelligent image editing that replaces stone materials 
 
 ---
 
-### 3. Replicate API (OPTIONAL for Enhanced Detection) 🔧
-
-**Status**: Optional enhancement - improves area detection quality
-
-Replicate provides SAM (Segment Anything Model) for AI-powered area detection. Without this, the system uses a smart fallback algorithm.
-
-#### Setup Instructions:
-
-1. **Create Replicate Account**
-   - Go to [replicate.com](https://replicate.com)
-   - Sign up for free account
-
-2. **Get API Token**
-   - Go to Account Settings → API Tokens
-   - Create a new token
-   - Copy the token (starts with `r8_`)
-
-3. **Add to Supabase Edge Functions**
-
-   ```bash
-   # Go to: Supabase Dashboard → Edge Functions → Settings
-   REPLICATE_API_TOKEN=r8_your_token_here
-   ```
-
-#### Cost Estimate:
-- SAM Model: ~$0.0005-0.001 per detection
-- Free tier: $10 credit (≈10,000 detections)
-
-#### Benefits:
-- **With Replicate**: Professional-grade object segmentation, handles complex textures
-- **Without Replicate**: Smart algorithm with adaptive tolerance (works well for most cases)
-
----
-
 ### API Configuration Checklist
 
 Before deploying to production, ensure you have:
@@ -250,10 +209,6 @@ Before deploying to production, ensure you have:
   - [ ] Resource created
   - [ ] DALL-E model deployed
   - [ ] Credentials added to Supabase Edge Functions
-- [ ] **Replicate** (Optional) - Enhanced area detection
-  - [ ] Account created
-  - [ ] API token generated
-  - [ ] Token added to Supabase Edge Functions
 
 ---
 
@@ -283,8 +238,8 @@ While Azure OpenAI is the default, you can modify the edge functions to use:
 ### AI Processing Pipeline
 
 1. **User clicks on surface** → `generate-mask` edge function
-   - If Replicate configured: SAM detects entire surface
-   - If not: Smart algorithm with adaptive tolerance
+   - Smart algorithm detects the entire surface area
+   - Uses adaptive color tolerance for accuracy
 
 2. **User selects stone material** → `process-ai-image` edge function
    - Azure OpenAI DALL-E replaces the masked area

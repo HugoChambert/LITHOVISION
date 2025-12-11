@@ -8,14 +8,13 @@ Get started with the AI-powered stone replacement tool in 10 minutes.
 ✅ **Pre-built React/Vite frontend** ready to use
 ✅ **Supabase backend** with database and storage
 ✅ **AI-powered processing** via Azure OpenAI
-✅ **Smart area detection** with optional Replicate SAM
+✅ **Smart area detection** built-in
 
 ## Prerequisites
 
 - **Node.js 18+**
 - **Supabase account** (already configured)
 - **Azure OpenAI account** (required for AI features)
-- **Replicate account** (optional, for enhanced detection)
 
 ---
 
@@ -27,7 +26,7 @@ npm install
 
 ---
 
-## Step 2: Configure Azure OpenAI (5-10 minutes) ⚠️ REQUIRED
+## Step 2: Configure Azure OpenAI (5-10 minutes) ⚠️ REQUIRED ⚠️
 
 Azure OpenAI powers the image editing that replaces stone materials.
 
@@ -83,40 +82,7 @@ AZURE_OPENAI_DEPLOYMENT=dall-e-3
 
 ---
 
-## Step 3: Configure Replicate (2 minutes) 🔧 OPTIONAL
-
-Replicate provides SAM (Segment Anything Model) for better area detection.
-
-### 3.1 Create Account
-
-1. Go to [replicate.com](https://replicate.com)
-2. Sign up with GitHub or email
-3. Verify your email
-
-### 3.2 Get API Token
-
-1. Go to [Account Settings](https://replicate.com/account/api-tokens)
-2. Click "Create token"
-3. Copy the token (starts with `r8_`)
-
-### 3.3 Add to Supabase
-
-1. Go to Supabase Dashboard → Edge Functions → Settings
-2. Add environment variable:
-
-```
-REPLICATE_API_TOKEN=r8_your_token_here
-```
-
-3. Click "Save"
-
-**Cost**: ~$0.001 per detection, $10 free credit
-
-**Without Replicate**: The app uses a smart fallback algorithm (works well for most cases)
-
----
-
-## Step 4: Start Development Server (30 seconds)
+## Step 3: Start Development Server (30 seconds)
 
 ```bash
 npm run dev
@@ -126,27 +92,27 @@ Visit `http://localhost:5173` and start using the tool!
 
 ---
 
-## Step 5: Test the Application
+## Step 4: Test the Application
 
-### 5.1 Upload an Image
+### 4.1 Upload an Image
 
 1. Click "Choose File" or drag-and-drop
 2. Upload a photo of a kitchen or bathroom
 3. Click "Continue"
 
-### 5.2 Select Area
+### 4.2 Select Area
 
 1. Click on the stone surface you want to replace
 2. AI automatically detects and highlights the area
 3. Click "Continue to Stone Selection"
 
-### 5.3 Choose Stone Material
+### 4.3 Choose Stone Material
 
 1. Browse the stone catalog
 2. Click on a material to select it
 3. Click "Generate Preview"
 
-### 5.4 View Result
+### 4.4 View Result
 
 1. Wait 5-10 seconds for AI processing
 2. Compare original vs. preview using the slider
@@ -213,8 +179,9 @@ Press `Ctrl + Shift + A` (Windows/Linux) or `Cmd + Shift + A` (Mac)
 ### "Failed to generate mask"
 
 **Solution**:
-- If using Replicate: Check your API token is correct
-- If not using Replicate: This is expected to work with fallback algorithm
+- Ensure you clicked directly on the stone surface
+- Try clicking a different area with uniform color
+- Check browser console for detailed error messages
 
 ### "Processing takes too long"
 
@@ -238,10 +205,6 @@ Press `Ctrl + Shift + A` (Windows/Linux) or `Cmd + Shift + A` (Mac)
 - **DALL-E 2**: $0.02 per image
 - **Free tier**: None, but very affordable
 
-### Replicate (Optional)
-- **SAM Model**: $0.001 per detection
-- **Free tier**: $10 credit (≈10,000 detections)
-
 ### Supabase (Already Configured)
 - **Database**: Free tier (500MB)
 - **Storage**: Free tier (1GB)
@@ -249,9 +212,8 @@ Press `Ctrl + Shift + A` (Windows/Linux) or `Cmd + Shift + A` (Mac)
 
 **Example monthly cost** (1,000 users, 10 images each):
 - Azure OpenAI: $400-800
-- Replicate: $10
 - Supabase: $0 (free tier)
-- **Total**: ~$400-810/month
+- **Total**: ~$400-800/month
 
 ---
 
@@ -275,9 +237,9 @@ Press `Ctrl + Shift + A` (Windows/Linux) or `Cmd + Shift + A` (Mac)
 ## Performance Expectations
 
 - **Upload**: < 1 second
-- **Area detection**: 1-3 seconds (with Replicate), instant (without)
+- **Area detection**: Instant (built-in algorithm)
 - **AI processing**: 5-10 seconds (Azure OpenAI)
-- **Total workflow**: ~15-20 seconds
+- **Total workflow**: ~10-15 seconds
 
 ---
 
