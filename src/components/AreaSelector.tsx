@@ -115,7 +115,7 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
         overlayCtx.restore();
       };
 
-      maskImg.src = `${import.meta.env.VITE_API_URL}${response.mask_url}`;
+      maskImg.src = response.mask_url;
       setCurrentMask(response.mask_url);
     } catch (err) {
       console.error('Error generating mask:', err);
@@ -140,10 +140,9 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
     if (!currentMask) return;
 
     try {
-      const maskUrl = `${import.meta.env.VITE_API_URL}${currentMask}`;
-      const response = await fetch(maskUrl);
+      const response = await fetch(currentMask);
       const blob = await response.blob();
-      onAreaSelected(maskUrl, blob);
+      onAreaSelected(currentMask, blob);
     } catch (err) {
       console.error('Error loading mask:', err);
       setError('Failed to load mask data');
