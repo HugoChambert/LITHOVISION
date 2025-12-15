@@ -441,6 +441,41 @@
   }
 }
 
+@media (max-width: 640px) {
+  .admin-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-filter-controls {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .search-input {
+    min-width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .image-upload-area {
+    padding: 24px 16px;
+  }
+
+  .uploaded-image-preview {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .admin-panel {
     padding: var(--spacing-sm);
@@ -448,5 +483,71 @@
 
   .admin-header h2 {
     font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .admin-stats .stat {
+    font-size: 13px;
+  }
+
+  .stone-form h3,
+  .stones-list h3 {
+    font-size: 17px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .field-description {
+    font-size: 12px;
+  }
+
+  .image-upload-area {
+    padding: 20px 12px;
+  }
+
+  .upload-label span {
+    font-size: 13px;
+  }
+
+  .upload-label small {
+    font-size: 11px;
+  }
+
+  .stone-details h4 {
+    font-size: 15px;
+  }
+
+  .stone-meta {
+    font-size: 13px;
+  }
+
+  .search-input,
+  .filter-select {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .admin-header h2 {
+    font-size: 18px;
+  }
+
+  .stone-form,
+  .stones-list {
+    padding: 12px;
+  }
+
+  .stone-form h3,
+  .stones-list h3 {
+    font-size: 16px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 15px;
+    padding: 10px 12px;
   }
 }

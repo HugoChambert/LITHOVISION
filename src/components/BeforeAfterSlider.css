@@ -103,9 +103,41 @@
   gap: 2px;
 }
 
+@media (max-width: 768px) {
+  .before-after-slider {
+    max-width: 100%;
+    border-radius: 10px;
+  }
+
+  .before-after-images {
+    aspect-ratio: 4 / 3;
+  }
+
+  .slider-labels {
+    padding: 0 20px;
+    top: 16px;
+  }
+
+  .label-before,
+  .label-after {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .slider-handle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 @media (max-width: 640px) {
+  .before-after-slider {
+    border-radius: 8px;
+  }
+
   .slider-labels {
     padding: 0 16px;
+    top: 12px;
   }
 
   .label-before,
@@ -122,5 +154,49 @@
   .slider-arrows svg {
     width: 10px;
     height: 10px;
+  }
+
+  .slider-line {
+    width: 3px;
+  }
+}
+
+@media (max-width: 480px) {
+  .before-after-images {
+    aspect-ratio: 1 / 1;
+  }
+
+  .slider-labels {
+    padding: 0 12px;
+    top: 10px;
+  }
+
+  .label-before,
+  .label-after {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .slider-handle {
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+  }
+}
+
+@media (max-width: 360px) {
+  .slider-labels {
+    padding: 0 8px;
+  }
+
+  .label-before,
+  .label-after {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .slider-handle {
+    width: 32px;
+    height: 32px;
   }
 }

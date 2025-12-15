@@ -232,17 +232,118 @@
   }
 }
 
+@media (max-width: 640px) {
+  .processing-state {
+    padding: var(--spacing-xl);
+  }
+
+  .processing-title {
+    font-size: 19px;
+  }
+
+  .processing-description {
+    font-size: 14px;
+  }
+
+  .comparison-label {
+    font-size: 15px;
+  }
+}
+
 @media (max-width: 480px) {
+  .preview-panel {
+    padding: 0 8px;
+  }
+
+  .processing-state {
+    padding: var(--spacing-lg);
+  }
+
+  .processing-spinner {
+    width: 50px;
+    height: 50px;
+    border-width: 4px;
+  }
+
+  .processing-title {
+    font-size: 18px;
+  }
+
+  .processing-description {
+    font-size: 13px;
+  }
+
   .processing-steps {
     max-width: 100%;
+    gap: var(--spacing-sm);
+  }
+
+  .processing-step {
+    font-size: 12px;
+    padding: 10px;
+  }
+
+  .step-icon {
+    width: 20px;
+    height: 20px;
   }
 
   .comparison-toggle {
     padding: var(--spacing-xs);
+    gap: 4px;
   }
 
   .toggle-btn {
     padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 13px;
+    min-width: 100px;
+  }
+
+  .comparison-label {
+    font-size: 14px;
+  }
+
+  .comparison-image,
+  .preview-image-full {
+    border-radius: var(--radius-sm);
+  }
+
+  .error-state {
+    padding: var(--spacing-lg);
+  }
+
+  .error-state p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .processing-spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
+
+  .processing-title {
+    font-size: 16px;
+  }
+
+  .processing-description {
+    font-size: 12px;
+  }
+
+  .processing-step {
+    font-size: 11px;
+    padding: 8px;
+  }
+
+  .toggle-btn {
+    font-size: 12px;
+    min-width: 80px;
+    padding: 6px var(--spacing-xs);
+  }
+
+  .comparison-label {
     font-size: 13px;
   }
 }

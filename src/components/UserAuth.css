@@ -163,3 +163,91 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+@media (max-width: 768px) {
+  .user-auth-modal {
+    padding: 24px;
+    max-width: 400px;
+  }
+
+  .user-auth-header h2 {
+    font-size: 22px;
+  }
+
+  .user-auth-header p {
+    font-size: 13px;
+  }
+
+  .close-btn {
+    top: 12px;
+    right: 12px;
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-auth-modal {
+    padding: 20px;
+    width: 92%;
+  }
+
+  .user-auth-header {
+    margin-bottom: 20px;
+  }
+
+  .user-auth-header h2 {
+    font-size: 20px;
+  }
+
+  .user-auth-header p {
+    font-size: 13px;
+  }
+
+  .close-btn {
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+  }
+
+  .user-auth-form {
+    gap: 16px;
+  }
+
+  .form-group input {
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+
+  .auth-error {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .auth-toggle {
+    margin-top: 16px;
+    font-size: 13px;
+  }
+
+  .auth-note {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+
+  .auth-note small {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .user-auth-modal {
+    padding: 16px;
+  }
+
+  .user-auth-header h2 {
+    font-size: 18px;
+  }
+
+  .form-group input {
+    padding: 10px 12px;
+  }
+}

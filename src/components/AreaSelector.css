@@ -208,12 +208,65 @@
   }
 }
 
+@media (max-width: 640px) {
+  .mode-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-btn {
+    justify-content: flex-start;
+    padding: 12px;
+  }
+}
+
 @media (max-width: 480px) {
+  .area-selector {
+    padding: 0 8px;
+  }
+
   .canvas-wrapper {
     min-height: 200px;
+    border-radius: var(--radius-sm);
   }
 
   .selection-canvas {
     border-radius: var(--radius-sm);
+  }
+
+  .tools-panel {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-md);
+  }
+
+  .tool-label {
+    font-size: 13px;
+  }
+
+  .tool-info {
+    font-size: 12px;
+  }
+
+  .mode-btn {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .canvas-loading {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .canvas-wrapper {
+    min-height: 180px;
+  }
+
+  .tools-panel {
+    padding: 12px;
+  }
+
+  .btn {
+    padding: 14px;
+    font-size: 14px;
   }
 }

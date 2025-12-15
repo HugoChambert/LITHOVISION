@@ -287,18 +287,108 @@
   }
 }
 
+@media (max-width: 640px) {
+  .section-title {
+    font-size: 19px;
+  }
+
+  .upload-text {
+    font-size: 14px;
+  }
+
+  .file-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .file-name {
+    margin-right: 0;
+  }
+}
+
 @media (max-width: 480px) {
+  .section-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .section-description {
+    font-size: 12px;
+    margin-bottom: var(--spacing-md);
+  }
+
   .upload-zone {
     padding: var(--spacing-lg);
     min-height: 200px;
   }
 
+  .upload-text {
+    font-size: 14px;
+  }
+
+  .upload-hint {
+    font-size: 11px;
+  }
+
   .preview-image {
     max-height: 250px;
+    border-radius: var(--radius-sm);
   }
 
   .processing-upload {
     min-height: 200px;
     padding: 40px 16px;
+  }
+
+  .processing-upload > p {
+    font-size: 14px;
+  }
+
+  .processing-spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
+
+  .progress-bar {
+    max-width: 240px;
+  }
+
+  .progress-text {
+    font-size: 13px;
+  }
+
+  .file-info {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .btn {
+    padding: 14px 24px;
+  }
+}
+
+@media (max-width: 360px) {
+  .section-title {
+    font-size: 16px;
+  }
+
+  .upload-zone {
+    padding: var(--spacing-md);
+    min-height: 180px;
+  }
+
+  .upload-text {
+    font-size: 13px;
+  }
+
+  .preview-image {
+    max-height: 220px;
+  }
+
+  .btn {
+    padding: 12px 20px;
+    font-size: 14px;
   }
 }

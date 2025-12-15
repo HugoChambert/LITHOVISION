@@ -366,8 +366,23 @@
 }
 
 @media (max-width: 640px) {
+  .stone-catalog {
+    padding: 0 var(--spacing-xs);
+  }
+
+  .filter-tabs {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    gap: var(--spacing-xs);
+  }
+
+  .filter-tab {
+    padding: 6px var(--spacing-sm);
+    font-size: 11px;
+  }
+
   .stones-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
   }
 
   .stone-image-wrapper {
@@ -377,14 +392,62 @@
   .stone-info {
     padding: var(--spacing-sm);
   }
+
+  .stone-name {
+    font-size: 14px;
+  }
+
+  .stone-description {
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
+  .loading-state,
+  .empty-state {
+    padding: var(--spacing-xl);
+    font-size: 16px;
+  }
+
   .stones-grid {
     grid-template-columns: 1fr;
   }
 
   .stone-image-wrapper {
-    height: 200px;
+    height: 180px;
+  }
+
+  .adjustment-controls {
+    padding: var(--spacing-sm);
+  }
+
+  .controls-title {
+    font-size: 14px;
+  }
+
+  .control-label {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stone-catalog {
+    padding: 0 4px;
+  }
+
+  .stone-info {
+    padding: 8px;
+  }
+
+  .stone-name {
+    font-size: 13px;
+  }
+
+  .stone-description {
+    font-size: 11px;
+  }
+
+  .stone-image-wrapper {
+    height: 160px;
   }
 }

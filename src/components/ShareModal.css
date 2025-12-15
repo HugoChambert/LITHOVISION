@@ -176,8 +176,128 @@
   color: white;
 }
 
+@media (max-width: 768px) {
+  .share-modal {
+    padding: 28px;
+    max-width: 460px;
+  }
+
+  .share-header h2 {
+    font-size: 22px;
+  }
+
+  .share-header p {
+    font-size: 13px;
+  }
+}
+
 @media (max-width: 640px) {
+  .share-modal {
+    padding: 24px;
+    width: 92%;
+  }
+
+  .share-header {
+    margin-bottom: 20px;
+  }
+
+  .share-header h2 {
+    font-size: 20px;
+  }
+
+  .share-content {
+    gap: 20px;
+  }
+
+  .share-generate {
+    padding: 24px 0;
+  }
+
+  .share-generate p {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .share-link-section label,
+  .share-social-section label {
+    font-size: 13px;
+  }
+
+  .share-link-input input {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
   .social-buttons {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .social-btn {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .share-social-section {
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .share-modal {
+    padding: 20px;
+    width: 94%;
+  }
+
+  .share-header h2 {
+    font-size: 18px;
+  }
+
+  .share-header p {
+    font-size: 12px;
+  }
+
+  .share-generate {
+    padding: 20px 0;
+  }
+
+  .share-generate p {
+    font-size: 13px;
+  }
+
+  .share-link-input {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .share-link-input input {
+    font-size: 12px;
+  }
+
+  .social-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .btn-text-danger {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .share-modal {
+    padding: 16px;
+  }
+
+  .share-header h2 {
+    font-size: 16px;
+  }
+
+  .share-content {
+    gap: 16px;
+  }
+
+  .social-btn {
+    gap: 6px;
   }
 }
