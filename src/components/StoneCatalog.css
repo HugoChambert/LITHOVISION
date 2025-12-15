@@ -373,11 +373,28 @@
   .filter-tabs {
     padding: var(--spacing-xs) var(--spacing-sm);
     gap: var(--spacing-xs);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .filter-tabs::-webkit-scrollbar-track {
+    background: var(--color-stone-light);
+  }
+
+  .filter-tabs::-webkit-scrollbar-thumb {
+    background: var(--color-stone-accent);
+    border-radius: 2px;
   }
 
   .filter-tab {
-    padding: 6px var(--spacing-sm);
+    padding: 8px var(--spacing-md);
     font-size: 11px;
+    min-height: 36px;
+    white-space: nowrap;
   }
 
   .stones-grid {

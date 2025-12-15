@@ -271,16 +271,23 @@
   }
 
   .share-link-input input {
-    font-size: 12px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  .share-link-input .btn {
+    min-height: 44px;
   }
 
   .social-btn {
-    padding: 10px 12px;
-    font-size: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    min-height: 44px;
   }
 
   .btn-text-danger {
     font-size: 13px;
+    min-height: 44px;
   }
 }
 

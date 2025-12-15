@@ -330,6 +330,14 @@
   .comparison-label {
     font-size: 15px;
   }
+
+  .comparison-card {
+    border-width: 1px;
+  }
+
+  .comparison-card:hover {
+    transform: translateY(-2px);
+  }
 }
 
 @media (max-width: 480px) {

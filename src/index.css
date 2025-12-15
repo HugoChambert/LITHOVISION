@@ -147,6 +147,10 @@ a:hover {
   h3 {
     font-size: 18px;
   }
+
+  button {
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -164,5 +168,32 @@ a:hover {
 
   h3 {
     font-size: 16px;
+  }
+
+  button {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 360px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  h3 {
+    font-size: 15px;
+  }
+
+  button {
+    min-height: 38px;
+    font-size: 14px;
   }
 }
