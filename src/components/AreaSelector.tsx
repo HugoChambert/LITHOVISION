@@ -119,7 +119,6 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
       overlayCtx.restore();
       setCurrentMask(maskResponse.mask_url);
     } catch (err) {
-      console.error('Error generating mask:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate mask');
     } finally {
       setIsGenerating(false);
@@ -146,8 +145,7 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
       const blob = await response.blob();
       onAreaSelected(currentMask, blob);
     } catch (err) {
-      console.error('Error loading mask:', err);
-      setError('Failed to load mask data');
+      setError(err instanceof Error ? err.message : 'Failed to load mask data');
     }
   };
 

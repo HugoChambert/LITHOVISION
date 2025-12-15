@@ -99,7 +99,6 @@ function App() {
       setCurrentStep('select');
       showToast('Image uploaded successfully', 'success');
     } catch (error) {
-      console.error('Error uploading image:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
       showToast(errorMessage, 'error');
       setUploadedImage(null);
@@ -115,8 +114,8 @@ function App() {
       setCurrentStep('choose-stone');
       showToast('Area selected successfully', 'success');
     } catch (error) {
-      console.error('Error uploading mask:', error);
-      showToast('Failed to upload mask', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload mask';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -174,7 +173,6 @@ function App() {
                 throw new Error(status.error || 'Processing failed');
               }
             } catch (error) {
-              console.error(`Error checking task status for ${stone.name}:`, error);
               setProcessingProgress(prev =>
                 prev.map(p => p.stone.id === stone.id ? { ...p, status: 'failed' } : p)
               );
@@ -188,7 +186,6 @@ function App() {
             );
           }
         } catch (error) {
-          console.error(`Error processing ${stone.name}:`, error);
           setProcessingProgress(prev =>
             prev.map(p => p.stone.id === stone.id ? { ...p, status: 'failed' } : p)
           );
@@ -203,8 +200,8 @@ function App() {
         showToast('Failed to generate any previews', 'error');
       }
     } catch (error) {
-      console.error('Error processing images:', error);
-      showToast('Failed to start processing', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start processing';
+      showToast(errorMessage, 'error');
       setIsProcessing(false);
     }
   };

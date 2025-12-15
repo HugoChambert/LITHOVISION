@@ -43,8 +43,7 @@ function StoneCatalog({ onStonesSelected, onBack }: StoneCatalogProps) {
           schema: 'public',
           table: 'material_presets',
         },
-        (payload) => {
-          console.log('Material catalog updated:', payload);
+        () => {
           fetchStones();
           fetchTypes();
         }
@@ -61,7 +60,7 @@ function StoneCatalog({ onStonesSelected, onBack }: StoneCatalogProps) {
       const data = await getMaterials();
       setStones(data || []);
     } catch (error) {
-      console.error('Error fetching stones:', error);
+      setStones([]);
     } finally {
       setLoading(false);
     }
@@ -72,7 +71,7 @@ function StoneCatalog({ onStonesSelected, onBack }: StoneCatalogProps) {
       const data = await getMaterialTypes();
       setTypes(data || []);
     } catch (error) {
-      console.error('Error fetching types:', error);
+      setTypes([]);
     }
   };
 

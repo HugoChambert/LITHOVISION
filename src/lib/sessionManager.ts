@@ -38,7 +38,7 @@ export function saveSessionLocal(data: Partial<SessionData>): void {
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(updated));
   } catch (error) {
-    console.error('Failed to save session locally:', error);
+    // Silently fail - session saving is not critical
   }
 }
 
@@ -58,7 +58,6 @@ export function loadSessionLocal(): SessionData {
 
     return data;
   } catch (error) {
-    console.error('Failed to load session locally:', error);
     return getEmptySession();
   }
 }
@@ -67,7 +66,7 @@ export function clearSessionLocal(): void {
   try {
     localStorage.removeItem(SESSION_KEY);
   } catch (error) {
-    console.error('Failed to clear session locally:', error);
+    // Silently fail - session clearing is not critical
   }
 }
 
@@ -81,7 +80,7 @@ export async function saveSessionRemote(data: Partial<SessionData>): Promise<voi
       timestamp: Date.now(),
     };
 
-    const { error } = await supabase
+    await supabase
       .from('project_sessions')
       .upsert({
         session_key: sessionKey,
@@ -90,12 +89,8 @@ export async function saveSessionRemote(data: Partial<SessionData>): Promise<voi
       }, {
         onConflict: 'session_key'
       });
-
-    if (error) {
-      console.error('Failed to save session remotely:', error);
-    }
   } catch (error) {
-    console.error('Failed to save session remotely:', error);
+    // Silently fail - remote session saving is not critical
   }
 }
 
@@ -121,7 +116,6 @@ export async function loadSessionRemote(): Promise<SessionData | null> {
 
     return data.project_data as SessionData;
   } catch (error) {
-    console.error('Failed to load session remotely:', error);
     return null;
   }
 }
@@ -130,16 +124,12 @@ export async function clearSessionRemote(): Promise<void> {
   try {
     const sessionKey = getLocalSessionKey();
 
-    const { error } = await supabase
+    await supabase
       .from('project_sessions')
       .delete()
       .eq('session_key', sessionKey);
-
-    if (error) {
-      console.error('Failed to clear session remotely:', error);
-    }
   } catch (error) {
-    console.error('Failed to clear session remotely:', error);
+    // Silently fail - remote session clearing is not critical
   }
 }
 

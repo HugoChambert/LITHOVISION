@@ -56,7 +56,7 @@ function AdminPanel() {
 
       setStones(data || []);
     } catch (error) {
-      console.error('Error fetching stones:', error);
+      setStones([]);
     } finally {
       setLoading(false);
     }
@@ -100,8 +100,8 @@ function AdminPanel() {
       setImagePreview(publicUrl);
       showToast('Image uploaded successfully', 'success');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      showToast('Failed to upload image', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
+      showToast(errorMessage, 'error');
     } finally {
       setUploadingImage(false);
     }
@@ -144,8 +144,8 @@ function AdminPanel() {
       resetForm();
       fetchStones();
     } catch (error) {
-      console.error('Error saving stone:', error);
-      showToast('Failed to save stone material', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save stone material';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -185,8 +185,8 @@ function AdminPanel() {
       showToast('Stone material deleted successfully', 'success');
       fetchStones();
     } catch (error) {
-      console.error('Error deleting stone:', error);
-      showToast('Failed to delete stone material', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete stone material';
+      showToast(errorMessage, 'error');
     }
   };
 

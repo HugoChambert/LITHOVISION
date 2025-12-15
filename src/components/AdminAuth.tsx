@@ -50,7 +50,6 @@ function AdminAuth({ onSuccess, onCancel }: AdminAuthProps) {
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
-      console.error('Login error:', err);
     } finally {
       setIsProcessing(false);
     }
@@ -80,7 +79,6 @@ function AdminAuth({ onSuccess, onCancel }: AdminAuthProps) {
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
-      console.error('Signup error:', err);
     } finally {
       setIsProcessing(false);
     }
