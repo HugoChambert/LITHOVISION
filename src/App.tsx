@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel';
 import AdminAuth from './components/AdminAuth';
 import UserAuth from './components/UserAuth';
 import ProjectGallery from './components/ProjectGallery';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
 import './App.css';
 
 type Step = 'upload' | 'select' | 'choose-stone' | 'preview';
@@ -391,6 +392,8 @@ function App() {
           </div>
         </main>
       )}
+
+      {!showAdmin && <KeyboardShortcuts />}
     </div>
   );
 }

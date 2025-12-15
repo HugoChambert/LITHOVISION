@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { type StoneMaterial } from '../lib/supabase';
 import { createProject } from '../lib/projectManager';
 import { showToast } from './ToastContainer';
+import ImageZoom from './ImageZoom';
 import './PreviewPanel.css';
 
 interface PreviewPanelProps {
@@ -27,6 +28,7 @@ function PreviewPanel({
 }: PreviewPanelProps) {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [zoomImage, setZoomImage] = useState<{ url: string; alt: string } | null>(null);
 
   const handleDownload = (imageUrl: string) => {
     const link = document.createElement('a');
@@ -96,8 +98,14 @@ function PreviewPanel({
           <div className="comparison-grid">
             {originalImage && (
               <div className="comparison-card">
-                <div className="comparison-image-wrapper">
+                <div
+                  className="comparison-image-wrapper"
+                  onClick={() => setZoomImage({ url: originalImage, alt: 'Original' })}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to zoom"
+                >
                   <img src={originalImage} alt="Original" className="comparison-image" />
+                  <div className="zoom-hint">🔍 Click to zoom</div>
                 </div>
                 <h3 className="comparison-label">Original</h3>
               </div>
@@ -105,8 +113,14 @@ function PreviewPanel({
 
             {previewImages.map(({ stone, imageUrl }) => (
               <div key={stone.id} className="comparison-card">
-                <div className="comparison-image-wrapper">
+                <div
+                  className="comparison-image-wrapper"
+                  onClick={() => setZoomImage({ url: imageUrl, alt: stone.name })}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to zoom"
+                >
                   <img src={imageUrl} alt={stone.name} className="comparison-image" />
+                  <div className="zoom-hint">🔍 Click to zoom</div>
                 </div>
                 <h3 className="comparison-label">{stone.name}</h3>
                 <p className="comparison-details">
@@ -155,6 +169,13 @@ function PreviewPanel({
         </div>
       )}
 
+      {zoomImage && (
+        <ImageZoom
+          imageUrl={zoomImage.url}
+          alt={zoomImage.alt}
+          onClose={() => setZoomImage(null)}
+        />
+      )}
     </div>
   );
 }

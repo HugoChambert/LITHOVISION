@@ -1,0 +1,240 @@
+.shortcuts-trigger {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.shortcuts-trigger:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+.shortcuts-trigger svg {
+  position: absolute;
+  opacity: 0.3;
+}
+
+.shortcuts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.shortcuts-modal {
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.shortcuts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.shortcuts-header h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.close-shortcuts {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-light);
+  font-size: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-shortcuts:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px;
+  background: var(--color-bg);
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.shortcut-item:hover {
+  background: var(--color-stone-light);
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.shortcut-key {
+  display: inline-block;
+  padding: 6px 12px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  box-shadow: 0 2px 0 var(--color-border);
+  min-width: 36px;
+  text-align: center;
+}
+
+.key-separator {
+  color: var(--color-text-light);
+  font-weight: 600;
+  margin: 0 4px;
+}
+
+.shortcut-description {
+  flex: 1;
+  font-size: 14px;
+  color: var(--color-text-light);
+  text-align: right;
+}
+
+.shortcuts-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 2px solid var(--color-border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .shortcuts-trigger {
+    width: 44px;
+    height: 44px;
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .shortcuts-modal {
+    padding: 24px;
+  }
+
+  .shortcuts-header h3 {
+    font-size: 20px;
+  }
+
+  .shortcut-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .shortcut-description {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .shortcuts-trigger {
+    width: 40px;
+    height: 40px;
+    bottom: 12px;
+    right: 12px;
+    font-size: 16px;
+  }
+
+  .shortcuts-modal {
+    padding: 20px;
+    width: 94%;
+  }
+
+  .shortcuts-header {
+    margin-bottom: 20px;
+  }
+
+  .shortcuts-header h3 {
+    font-size: 18px;
+  }
+
+  .shortcut-key {
+    padding: 5px 10px;
+    font-size: 12px;
+    min-width: 32px;
+  }
+
+  .shortcut-description {
+    font-size: 13px;
+  }
+
+  .shortcuts-footer {
+    font-size: 12px;
+  }
+}
