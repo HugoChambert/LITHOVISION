@@ -103,8 +103,7 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
     <div className="image-upload">
       <h2 className="section-title">Upload Your Kitchen or Bathroom Photo</h2>
       <p className="section-description">
-        Upload a clear photo of the area where you want to replace the stone material.
-        Best results with well-lit, front-facing shots.
+        Upload a clear photo showing your countertop. For best results, ensure the countertop is well-lit, clearly visible, and photographed from a straight-on angle.
       </p>
 
       {error && (

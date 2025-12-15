@@ -51,7 +51,17 @@ Deno.serve(async (req: Request) => {
     const maskImageBuffer = await maskImageBlob.arrayBuffer();
     const maskImageBase64 = btoa(String.fromCharCode(...new Uint8Array(maskImageBuffer)));
 
-    const prompt = `Replace the selected area with ${selectedStone.name} ${selectedStone.type}. ${selectedStone.description}. Pattern: ${selectedStone.pattern}. Maintain realistic lighting, shadows, and perspective. Brightness adjustment: ${adjustments.brightness}, Contrast: ${adjustments.contrast}, Scale: ${adjustments.scale}.`;
+    const prompt = `Transform the kitchen countertop surface in the selected area with ${selectedStone.name} ${selectedStone.type} material.
+Stone details: ${selectedStone.description}.
+Pattern type: ${selectedStone.pattern}.
+IMPORTANT: The selected area is a horizontal countertop surface used for food preparation. Apply the stone texture realistically across the flat countertop plane, maintaining:
+- Natural stone veining and pattern flow appropriate for countertop installation
+- Realistic lighting and reflections on the polished surface
+- Proper perspective and depth for a horizontal surface
+- Seamless edges where countertop meets walls or backsplash
+- Authentic shadows cast by objects on the counter
+- Natural color variations and texture detail typical of real ${selectedStone.type}
+Adjustments: Brightness ${adjustments.brightness}, Contrast ${adjustments.contrast}, Scale ${adjustments.scale}.`;
 
     const apiUrl = `${azureEndpoint}/openai/deployments/${deploymentName}/images/edits?api-version=2024-02-01`;
 

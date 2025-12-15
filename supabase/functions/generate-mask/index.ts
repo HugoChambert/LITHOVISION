@@ -29,11 +29,13 @@ async function generateMaskWithReplicate(imageUrl: string, clickX: number, click
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'cd86552f6c8fe925d9900f1b3e865c68fdd7c3d46d9f4f2f7d6f7c7b5a1a2b3c',
+        version: '6b4a3f84b5e0d8c5e9c8f0b3e7d9a2c1b4f6e8d0c2a5b7d9e1f3c5a7b9d1e3f5',
         input: {
           image: imageUrl,
           point_coords: `[[${clickX},${clickY}]]`,
           point_labels: '[1]',
+          multimask_output: false,
+          return_logits: false,
         }
       })
     });
@@ -124,8 +126,9 @@ Deno.serve(async (req: Request) => {
 
       floodFill(imageData, maskData, img.width, img.height, click_x, click_y, targetPixel, tolerance);
 
-      morphologicalClose(maskData, img.width, img.height, 2);
-      removeSmallRegions(maskData, img.width, img.height, 50);
+      morphologicalClose(maskData, img.width, img.height, 3);
+      removeSmallRegions(maskData, img.width, img.height, 100);
+      smoothMaskEdges(maskData, img.width, img.height);
 
       for (let i = 0; i < maskData.length; i += 4) {
         const alpha = maskData[i + 3];
@@ -210,29 +213,44 @@ function calculateAdaptiveTolerance(
   width: number,
   height: number
 ): number {
-  const sampleRadius = 5;
+  const sampleRadius = 10;
   const samples: [number, number, number][] = [];
+  const horizontalSamples: [number, number, number][] = [];
 
   for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
     for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
       const sx = x + dx;
       const sy = y + dy;
       if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
-        samples.push(getPixel(imageData, sx, sy));
+        const color = getPixel(imageData, sx, sy);
+        samples.push(color);
+
+        if (Math.abs(dy) <= 2) {
+          horizontalSamples.push(color);
+        }
       }
     }
   }
 
   const centerColor = getPixel(imageData, x, y);
   let totalVariance = 0;
+  let horizontalVariance = 0;
 
   for (const sample of samples) {
     totalVariance += colorDistance(centerColor, sample);
   }
 
+  for (const sample of horizontalSamples) {
+    horizontalVariance += colorDistance(centerColor, sample);
+  }
+
   const avgVariance = totalVariance / samples.length;
-  const baseTolerance = 35;
-  const adaptiveTolerance = Math.max(25, Math.min(60, baseTolerance + avgVariance * 0.5));
+  const avgHorizontalVariance = horizontalVariance / horizontalSamples.length;
+
+  const horizontalWeight = avgHorizontalVariance < avgVariance * 0.8 ? 1.3 : 1.0;
+
+  const baseTolerance = 45;
+  const adaptiveTolerance = Math.max(35, Math.min(75, baseTolerance + avgVariance * 0.6)) * horizontalWeight;
 
   return adaptiveTolerance;
 }
@@ -336,6 +354,41 @@ function removeSmallRegions(
   }
 }
 
+function smoothMaskEdges(
+  maskData: Uint8ClampedArray,
+  width: number,
+  height: number
+) {
+  const temp = new Uint8ClampedArray(maskData.length);
+  const radius = 1;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      let count = 0;
+
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            const i = (ny * width + nx) * 4;
+            sum += maskData[i + 3];
+            count++;
+          }
+        }
+      }
+
+      const i = (y * width + x) * 4;
+      temp[i + 3] = Math.round(sum / count);
+    }
+  }
+
+  for (let i = 0; i < maskData.length; i += 4) {
+    maskData[i + 3] = temp[i + 3];
+  }
+}
+
 function floodFill(
   imageData: ImageData,
   maskData: Uint8ClampedArray,
@@ -348,23 +401,23 @@ function floodFill(
 ) {
   const visited = new Set<number>();
   const queue: [number, number][] = [[x, y]];
-  
+
   while (queue.length > 0) {
     const [cx, cy] = queue.shift()!;
-    
+
     if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
-    
+
     const key = cy * width + cx;
     if (visited.has(key)) continue;
     visited.add(key);
-    
+
     const currentColor = getPixel(imageData, cx, cy);
     const distance = colorDistance(currentColor, targetColor);
-    
+
     if (distance <= tolerance) {
       const i = (cy * width + cx) * 4;
       maskData[i + 3] = 255;
-      
+
       queue.push([cx + 1, cy]);
       queue.push([cx - 1, cy]);
       queue.push([cx, cy + 1]);

@@ -153,9 +153,9 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
 
   return (
     <div className="area-selector">
-      <h2 className="section-title">Select the Area to Replace</h2>
+      <h2 className="section-title">Select Your Countertop Surface</h2>
       <p className="section-description">
-        Click on any surface to select it. AI-powered detection automatically identifies the entire area.
+        Click anywhere on the countertop you want to replace. Our AI will automatically detect and highlight the entire countertop surface for precise stone replacement.
       </p>
 
       {error && (
@@ -185,8 +185,14 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
         <div className="tools-panel">
           <div className="tool-group">
             <p className="tool-info">
-              Simply click anywhere on the surface you want to replace. Advanced AI analyzes the image and precisely detects the entire area.
+              <strong>How to select:</strong>
             </p>
+            <ul style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--color-text-light)', marginTop: '8px', paddingLeft: '20px' }}>
+              <li>Click directly on your countertop surface</li>
+              <li>The AI will automatically detect the entire countertop area</li>
+              <li>Works best with clear, well-lit photos</li>
+              <li>If selection is inaccurate, click Clear and try a different spot on the counter</li>
+            </ul>
           </div>
 
           <button
