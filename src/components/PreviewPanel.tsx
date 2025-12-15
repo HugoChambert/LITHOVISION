@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { type StoneMaterial } from '../lib/supabase';
-import { createProject, updateProject } from '../lib/projectManager';
+import { createProject } from '../lib/projectManager';
 import { showToast } from './ToastContainer';
-import BeforeAfterSlider from './BeforeAfterSlider';
-import ShareModal from './ShareModal';
 import './PreviewPanel.css';
 
 interface PreviewPanelProps {
   originalImage: string | null;
-  previewImage: string | null;
-  selectedStone: StoneMaterial | null;
+  previewImages: Array<{ stone: StoneMaterial; imageUrl: string }>;
+  selectedStones: StoneMaterial[];
   isProcessing: boolean;
+  processingProgress: Array<{ stone: StoneMaterial; status: 'pending' | 'processing' | 'completed' | 'failed' }>;
   onReset: () => void;
   imageId?: string | null;
   maskId?: string | null;
@@ -19,23 +18,19 @@ interface PreviewPanelProps {
 
 function PreviewPanel({
   originalImage,
-  previewImage,
-  selectedStone,
+  previewImages,
+  selectedStones,
   isProcessing,
+  processingProgress,
   onReset,
   maskId,
 }: PreviewPanelProps) {
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState<'slider' | 'side-by-side' | 'preview'>('slider');
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleDownload = () => {
-    if (!previewImage) return;
-
+  const handleDownload = (imageUrl: string) => {
     const link = document.createElement('a');
-    link.href = previewImage;
+    link.href = imageUrl;
     link.download = `stone-preview-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
@@ -43,37 +38,27 @@ function PreviewPanel({
     showToast('Download started', 'success');
   };
 
-  const handleSaveProject = async () => {
+  const handleSaveProject = async (imageUrl: string, stone: StoneMaterial) => {
     if (!user) {
       showToast('Please sign in to save your project', 'info');
       return;
     }
 
-    if (!originalImage || !previewImage) return;
+    if (!originalImage) return;
 
     try {
       setIsSaving(true);
 
-      if (currentProjectId) {
-        await updateProject(currentProjectId, {
-          result_image_url: previewImage,
-          mask_image_url: maskId || undefined,
-          stone_material_id: selectedStone?.id,
-          processing_status: 'completed',
-        });
-        showToast('Project updated successfully', 'success');
-      } else {
-        const project = await createProject(user.id, {
-          name: `Stone Design ${new Date().toLocaleDateString()}`,
-          original_image_url: originalImage,
-          mask_image_url: maskId || undefined,
-          stone_material_id: selectedStone?.id,
-          result_image_url: previewImage,
-          processing_status: 'completed',
-        });
-        setCurrentProjectId(project.id);
-        showToast('Project saved successfully', 'success');
-      }
+      await createProject(user.id, {
+        name: `${stone.name} Design ${new Date().toLocaleDateString()}`,
+        original_image_url: originalImage,
+        mask_image_url: maskId || undefined,
+        stone_material_id: stone.id,
+        result_image_url: imageUrl,
+        processing_status: 'completed',
+      });
+
+      showToast('Project saved successfully', 'success');
     } catch (error) {
       showToast('Failed to save project', 'error');
     } finally {
@@ -81,147 +66,95 @@ function PreviewPanel({
     }
   };
 
-  const handleShare = () => {
-    if (!user) {
-      showToast('Please sign in to share your project', 'info');
-      return;
-    }
-
-    if (!currentProjectId) {
-      showToast('Please save your project first', 'info');
-      return;
-    }
-
-    setShowShareModal(true);
-  };
-
   return (
     <div className="preview-panel">
-      <h2 className="section-title">Preview Your Design</h2>
-      {selectedStone && (
-        <p className="section-description">
-          Showing preview with <strong>{selectedStone.name}</strong>
-        </p>
-      )}
+      <h2 className="section-title">Compare Stone Designs</h2>
+      <p className="section-description">
+        View all {selectedStones.length} stone material{selectedStones.length !== 1 ? 's' : ''} applied to your space
+      </p>
 
       {isProcessing ? (
         <div className="processing-state">
           <div className="processing-spinner" />
-          <h3 className="processing-title">Generating Your Preview</h3>
+          <h3 className="processing-title">Generating Your Previews</h3>
           <p className="processing-description">
-            Our AI is working its magic to transform your space...
+            Processing {selectedStones.length} stone material{selectedStones.length !== 1 ? 's' : ''}...
           </p>
           <div className="processing-steps">
-            <div className="processing-step">
-              <div className="step-icon">✓</div>
-              <span>Analyzing image</span>
-            </div>
-            <div className="processing-step active">
-              <div className="step-icon">
-                <div className="mini-spinner" />
+            {processingProgress.map(({ stone, status }) => (
+              <div key={stone.id} className={`processing-step ${status === 'processing' ? 'active' : ''}`}>
+                <div className="step-icon">
+                  {status === 'completed' ? '✓' : status === 'failed' ? '✗' : status === 'processing' ? <div className="mini-spinner" /> : '◦'}
+                </div>
+                <span>{stone.name}</span>
               </div>
-              <span>Segmenting area</span>
-            </div>
-            <div className="processing-step">
-              <div className="step-icon">◦</div>
-              <span>Estimating depth</span>
-            </div>
-            <div className="processing-step">
-              <div className="step-icon">◦</div>
-              <span>Applying stone texture</span>
-            </div>
-            <div className="processing-step">
-              <div className="step-icon">◦</div>
-              <span>Color matching</span>
-            </div>
+            ))}
           </div>
         </div>
-      ) : previewImage ? (
+      ) : previewImages.length > 0 ? (
         <div className="preview-content">
-          <div className="comparison-toggle">
-            <button
-              className={`toggle-btn ${viewMode === 'slider' ? 'active' : ''}`}
-              onClick={() => setViewMode('slider')}
-            >
-              Interactive Slider
-            </button>
-            <button
-              className={`toggle-btn ${viewMode === 'side-by-side' ? 'active' : ''}`}
-              onClick={() => setViewMode('side-by-side')}
-            >
-              Side by Side
-            </button>
-            <button
-              className={`toggle-btn ${viewMode === 'preview' ? 'active' : ''}`}
-              onClick={() => setViewMode('preview')}
-            >
-              Preview Only
-            </button>
-          </div>
-
-          {viewMode === 'slider' && originalImage ? (
-            <BeforeAfterSlider
-              beforeImage={originalImage}
-              afterImage={previewImage}
-              beforeLabel="Original"
-              afterLabel={`With ${selectedStone?.name || 'Stone'}`}
-            />
-          ) : viewMode === 'side-by-side' ? (
-            <div className="comparison-view">
-              <div className="comparison-item">
+          <div className="comparison-grid">
+            {originalImage && (
+              <div className="comparison-card">
+                <div className="comparison-image-wrapper">
+                  <img src={originalImage} alt="Original" className="comparison-image" />
+                </div>
                 <h3 className="comparison-label">Original</h3>
-                <img src={originalImage!} alt="Original" className="comparison-image" />
               </div>
-              <div className="comparison-item">
-                <h3 className="comparison-label">With {selectedStone?.name}</h3>
-                <img src={previewImage} alt="Preview" className="comparison-image" />
+            )}
+
+            {previewImages.map(({ stone, imageUrl }) => (
+              <div key={stone.id} className="comparison-card">
+                <div className="comparison-image-wrapper">
+                  <img src={imageUrl} alt={stone.name} className="comparison-image" />
+                </div>
+                <h3 className="comparison-label">{stone.name}</h3>
+                <p className="comparison-details">
+                  {stone.type} • {stone.pattern}
+                  {stone.price_per_sqft && <span className="stone-price"> • ${stone.price_per_sqft.toFixed(2)}/sqft</span>}
+                </p>
+                <div className="comparison-actions">
+                  <button
+                    className="btn-icon-small"
+                    onClick={() => handleDownload(imageUrl)}
+                    title="Download"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                  </button>
+                  {user && (
+                    <button
+                      className="btn-icon-small"
+                      onClick={() => handleSaveProject(imageUrl, stone)}
+                      disabled={isSaving}
+                      title="Save"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="single-view">
-              <img src={previewImage} alt="Preview" className="preview-image-full" />
-            </div>
-          )}
+            ))}
+          </div>
 
           <div className="action-buttons">
             <button className="btn btn-secondary" onClick={onReset}>
               Start New Project
             </button>
-            {user && (
-              <button
-                className="btn btn-secondary"
-                onClick={handleSaveProject}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : currentProjectId ? 'Update Project' : 'Save Project'}
-              </button>
-            )}
-            {user && currentProjectId && (
-              <button className="btn btn-secondary" onClick={handleShare}>
-                Share
-              </button>
-            )}
-            <button className="btn btn-primary" onClick={handleDownload}>
-              Download
-            </button>
           </div>
         </div>
       ) : (
         <div className="error-state">
-          <p>Failed to generate preview. Please try again.</p>
+          <p>Failed to generate previews. Please try again.</p>
           <button className="btn btn-primary" onClick={onReset}>
             Start Over
           </button>
         </div>
       )}
 
-      {showShareModal && currentProjectId && selectedStone && (
-        <ShareModal
-          projectId={currentProjectId}
-          projectName={`Design with ${selectedStone.name}`}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
     </div>
   );
 }

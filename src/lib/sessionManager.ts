@@ -7,8 +7,8 @@ export interface SessionData {
   imageId: string | null;
   maskData: string | null;
   maskId: string | null;
-  selectedStone: StoneMaterial | null;
-  previewImage: string | null;
+  selectedStones: StoneMaterial[];
+  previewImages: Array<{ stone: StoneMaterial; imageUrl: string }>;
   timestamp: number;
 }
 
@@ -155,8 +155,8 @@ function getEmptySession(): SessionData {
     imageId: null,
     maskData: null,
     maskId: null,
-    selectedStone: null,
-    previewImage: null,
+    selectedStones: [],
+    previewImages: [],
     timestamp: Date.now(),
   };
 }

@@ -30,9 +30,10 @@ function App() {
   const [imageId, setImageId] = useState<string | null>(null);
   const [maskData, setMaskData] = useState<string | null>(null);
   const [maskId, setMaskId] = useState<string | null>(null);
-  const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [selectedStones, setSelectedStones] = useState<StoneMaterial[]>([]);
+  const [previewImages, setPreviewImages] = useState<Array<{ stone: StoneMaterial; imageUrl: string }>>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState<Array<{ stone: StoneMaterial; status: 'pending' | 'processing' | 'completed' | 'failed' }>>([]);
 
   useEffect(() => {
     loadSession();
@@ -58,7 +59,7 @@ function App() {
     if (currentStep !== 'upload' || uploadedImage) {
       saveSession();
     }
-  }, [currentStep, uploadedImage, imageId, maskData, maskId, selectedStone, previewImage]);
+  }, [currentStep, uploadedImage, imageId, maskData, maskId, selectedStones, previewImages]);
 
   const loadSession = () => {
     if (sessionManager.hasStoredSession()) {
@@ -68,8 +69,8 @@ function App() {
       setImageId(session.imageId);
       setMaskData(session.maskData);
       setMaskId(session.maskId);
-      setSelectedStone(session.selectedStone);
-      setPreviewImage(session.previewImage);
+      setSelectedStones(session.selectedStones || []);
+      setPreviewImages(session.previewImages || []);
     }
   };
 
@@ -80,8 +81,8 @@ function App() {
       imageId,
       maskData,
       maskId,
-      selectedStone,
-      previewImage,
+      selectedStones,
+      previewImages,
     });
   };
 
@@ -119,52 +120,90 @@ function App() {
     }
   };
 
-  const handleStoneSelected = async (stone: StoneMaterial) => {
+  const handleStonesSelected = async (stones: StoneMaterial[]) => {
     if (!imageId || !maskId) {
       showToast('Missing image or mask data', 'error');
       return;
     }
 
-    setSelectedStone(stone);
+    setSelectedStones(stones);
     setCurrentStep('preview');
     setIsProcessing(true);
+    setPreviewImages([]);
+    setProcessingProgress(stones.map(stone => ({ stone, status: 'pending' })));
 
     try {
-      const { task_id } = await api.generateStoneReplacement(
-        imageId,
-        maskId,
-        stone
-      );
+      const results: Array<{ stone: StoneMaterial; imageUrl: string }> = [];
 
-      const pollInterval = setInterval(async () => {
+      for (let i = 0; i < stones.length; i++) {
+        const stone = stones[i];
+
+        setProcessingProgress(prev =>
+          prev.map(p => p.stone.id === stone.id ? { ...p, status: 'processing' } : p)
+        );
+
         try {
-          const status = await api.getTaskStatus(task_id);
+          const { task_id } = await api.generateStoneReplacement(
+            imageId,
+            maskId,
+            stone
+          );
 
-          if (status.status === 'completed' && status.result_url) {
-            setPreviewImage(api.getImageUrl(status.result_url));
-            setIsProcessing(false);
-            clearInterval(pollInterval);
-            showToast('Preview generated successfully', 'success');
-          } else if (status.status === 'failed') {
-            throw new Error(status.error || 'Processing failed');
+          let completed = false;
+          const maxAttempts = 150;
+          let attempts = 0;
+
+          while (!completed && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            attempts++;
+
+            try {
+              const status = await api.getTaskStatus(task_id);
+
+              if (status.status === 'completed' && status.result_url) {
+                const imageUrl = api.getImageUrl(status.result_url);
+                results.push({ stone, imageUrl });
+                setPreviewImages([...results]);
+
+                setProcessingProgress(prev =>
+                  prev.map(p => p.stone.id === stone.id ? { ...p, status: 'completed' } : p)
+                );
+
+                completed = true;
+              } else if (status.status === 'failed') {
+                throw new Error(status.error || 'Processing failed');
+              }
+            } catch (error) {
+              console.error(`Error checking task status for ${stone.name}:`, error);
+              setProcessingProgress(prev =>
+                prev.map(p => p.stone.id === stone.id ? { ...p, status: 'failed' } : p)
+              );
+              completed = true;
+            }
+          }
+
+          if (attempts >= maxAttempts) {
+            setProcessingProgress(prev =>
+              prev.map(p => p.stone.id === stone.id ? { ...p, status: 'failed' } : p)
+            );
           }
         } catch (error) {
-          console.error('Error checking task status:', error);
-          setIsProcessing(false);
-          clearInterval(pollInterval);
-          showToast('Failed to process image', 'error');
+          console.error(`Error processing ${stone.name}:`, error);
+          setProcessingProgress(prev =>
+            prev.map(p => p.stone.id === stone.id ? { ...p, status: 'failed' } : p)
+          );
         }
-      }, 2000);
+      }
 
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (isProcessing) {
-          setIsProcessing(false);
-          showToast('Processing timeout', 'error');
-        }
-      }, 300000);
+      setIsProcessing(false);
+
+      if (results.length > 0) {
+        showToast(`Generated ${results.length} preview${results.length > 1 ? 's' : ''} successfully`, 'success');
+      } else {
+        showToast('Failed to generate any previews', 'error');
+      }
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error('Error processing images:', error);
       showToast('Failed to start processing', 'error');
       setIsProcessing(false);
     }
@@ -176,9 +215,10 @@ function App() {
     setImageId(null);
     setMaskData(null);
     setMaskId(null);
-    setSelectedStone(null);
-    setPreviewImage(null);
+    setSelectedStones([]);
+    setPreviewImages([]);
     setIsProcessing(false);
+    setProcessingProgress([]);
     sessionManager.clearSessionLocal();
   };
 
@@ -308,9 +348,9 @@ function App() {
               <div className="step-number">2</div>
               <div className="step-label">Select Area</div>
             </div>
-            <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStone ? 'completed' : ''}`}>
+            <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStones.length > 0 ? 'completed' : ''}`}>
               <div className="step-number">3</div>
-              <div className="step-label">Choose Stone</div>
+              <div className="step-label">Choose Stones</div>
             </div>
             <div className={`step ${currentStep === 'preview' ? 'active' : ''}`}>
               <div className="step-number">4</div>
@@ -334,7 +374,7 @@ function App() {
 
             {currentStep === 'choose-stone' && (
               <StoneCatalog
-                onStoneSelected={handleStoneSelected}
+                onStonesSelected={handleStonesSelected}
                 onBack={() => setCurrentStep('select')}
               />
             )}
@@ -342,9 +382,10 @@ function App() {
             {currentStep === 'preview' && (
               <PreviewPanel
                 originalImage={uploadedImage}
-                previewImage={previewImage}
-                selectedStone={selectedStone}
+                previewImages={previewImages}
+                selectedStones={selectedStones}
                 isProcessing={isProcessing}
+                processingProgress={processingProgress}
                 onReset={handleReset}
                 imageId={imageId}
                 maskId={maskId}

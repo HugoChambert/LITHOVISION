@@ -3,7 +3,7 @@ import { getMaterials, getMaterialTypes, supabase, type StoneMaterial } from '..
 import './StoneCatalog.css';
 
 interface StoneCatalogProps {
-  onStoneSelected: (stone: StoneMaterial) => void;
+  onStonesSelected: (stones: StoneMaterial[]) => void;
   onBack: () => void;
 }
 
@@ -23,12 +23,12 @@ function getColorForFamily(colorFamily: string, darker: boolean = false): string
   return darker ? dark : light;
 }
 
-function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
+function StoneCatalog({ onStonesSelected, onBack }: StoneCatalogProps) {
   const [stones, setStones] = useState<StoneMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [types, setTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedStone, setSelectedStone] = useState<StoneMaterial | null>(null);
+  const [selectedStones, setSelectedStones] = useState<StoneMaterial[]>([]);
 
   useEffect(() => {
     fetchStones();
@@ -81,12 +81,19 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
     : stones.filter(stone => stone.type === selectedType);
 
   const handleStoneClick = (stone: StoneMaterial) => {
-    setSelectedStone(stone);
+    setSelectedStones(prev => {
+      const isSelected = prev.some(s => s.id === stone.id);
+      if (isSelected) {
+        return prev.filter(s => s.id !== stone.id);
+      } else {
+        return [...prev, stone];
+      }
+    });
   };
 
   const handleContinue = () => {
-    if (selectedStone) {
-      onStoneSelected(selectedStone);
+    if (selectedStones.length > 0) {
+      onStonesSelected(selectedStones);
     }
   };
 
@@ -100,9 +107,9 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
 
   return (
     <div className="stone-catalog">
-      <h2 className="section-title">Choose Your Stone Material</h2>
+      <h2 className="section-title">Choose Stone Materials</h2>
       <p className="section-description">
-        Select from our curated collection of premium stone materials.
+        Select multiple stones to compare results. {selectedStones.length > 0 && `(${selectedStones.length} selected)`}
       </p>
 
       <div className="filter-tabs">
@@ -124,35 +131,37 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
       </div>
 
       <div className="stones-grid">
-        {filteredStones.map((stone) => (
-          <div
-            key={stone.id}
-            className={`stone-card ${selectedStone?.id === stone.id ? 'selected' : ''} ${!stone.in_stock ? 'out-of-stock' : ''}`}
-            onClick={() => stone.in_stock && handleStoneClick(stone)}
-            style={{ cursor: stone.in_stock ? 'pointer' : 'not-allowed', opacity: stone.in_stock ? 1 : 0.6 }}
-          >
-            <div className="stone-image-wrapper">
-              {stone.preview_image_url ? (
-                <img
-                  src={stone.preview_image_url}
-                  alt={stone.name}
-                  className="stone-image"
-                />
-              ) : (
-                <div className="stone-placeholder" style={{
-                  background: `linear-gradient(135deg, ${getColorForFamily(stone.color_family)} 0%, ${getColorForFamily(stone.color_family, true)} 100%)`
-                }}>
-                  <span className="placeholder-text">{stone.name}</span>
-                </div>
-              )}
-              {selectedStone?.id === stone.id && (
-                <div className="selected-badge">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                  </svg>
-                </div>
-              )}
-            </div>
+        {filteredStones.map((stone) => {
+          const isSelected = selectedStones.some(s => s.id === stone.id);
+          return (
+            <div
+              key={stone.id}
+              className={`stone-card ${isSelected ? 'selected' : ''} ${!stone.in_stock ? 'out-of-stock' : ''}`}
+              onClick={() => stone.in_stock && handleStoneClick(stone)}
+              style={{ cursor: stone.in_stock ? 'pointer' : 'not-allowed', opacity: stone.in_stock ? 1 : 0.6 }}
+            >
+              <div className="stone-image-wrapper">
+                {stone.preview_image_url ? (
+                  <img
+                    src={stone.preview_image_url}
+                    alt={stone.name}
+                    className="stone-image"
+                  />
+                ) : (
+                  <div className="stone-placeholder" style={{
+                    background: `linear-gradient(135deg, ${getColorForFamily(stone.color_family)} 0%, ${getColorForFamily(stone.color_family, true)} 100%)`
+                  }}>
+                    <span className="placeholder-text">{stone.name}</span>
+                  </div>
+                )}
+                {isSelected && (
+                  <div className="selected-badge">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
             <div className="stone-info">
               <h3 className="stone-name">{stone.name}</h3>
               <div className="stone-meta">
@@ -179,8 +188,9 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
                 )}
               </div>
             </div>
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {filteredStones.length === 0 && (
@@ -197,9 +207,9 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
         <button
           className="btn btn-primary"
           onClick={handleContinue}
-          disabled={!selectedStone || !selectedStone.in_stock}
+          disabled={selectedStones.length === 0}
         >
-          Generate Preview
+          Compare {selectedStones.length > 0 ? `${selectedStones.length} ` : ''}Stone{selectedStones.length !== 1 ? 's' : ''}
         </button>
       </div>
     </div>
