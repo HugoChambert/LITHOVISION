@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMaterials, getMaterialTypes, type StoneMaterial } from '../lib/supabase';
+import { getMaterials, getMaterialTypes, supabase, type StoneMaterial } from '../lib/supabase';
 import './StoneCatalog.css';
 
 interface StoneCatalogProps {
@@ -33,6 +33,27 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
   useEffect(() => {
     fetchStones();
     fetchTypes();
+
+    const channel = supabase
+      .channel('material_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'material_presets',
+        },
+        (payload) => {
+          console.log('Material catalog updated:', payload);
+          fetchStones();
+          fetchTypes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchStones = async () => {
@@ -106,8 +127,9 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
         {filteredStones.map((stone) => (
           <div
             key={stone.id}
-            className={`stone-card ${selectedStone?.id === stone.id ? 'selected' : ''}`}
-            onClick={() => handleStoneClick(stone)}
+            className={`stone-card ${selectedStone?.id === stone.id ? 'selected' : ''} ${!stone.in_stock ? 'out-of-stock' : ''}`}
+            onClick={() => stone.in_stock && handleStoneClick(stone)}
+            style={{ cursor: stone.in_stock ? 'pointer' : 'not-allowed', opacity: stone.in_stock ? 1 : 0.6 }}
           >
             <div className="stone-image-wrapper">
               {stone.preview_image_url ? (
@@ -138,6 +160,24 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
                 <span className="stone-pattern">{stone.pattern}</span>
               </div>
               <p className="stone-description">{stone.description.substring(0, 100)}...</p>
+              <div className="stone-availability">
+                {!stone.in_stock ? (
+                  <span className="availability-badge out-of-stock">Out of Stock</span>
+                ) : stone.quantity_available !== null && stone.quantity_available <= (stone.low_stock_threshold || 5) ? (
+                  <span className="availability-badge low-stock">
+                    Only {stone.quantity_available} {stone.quantity_available === 1 ? 'slab' : 'slabs'} left
+                  </span>
+                ) : stone.quantity_available !== null ? (
+                  <span className="availability-badge in-stock">
+                    {stone.quantity_available} {stone.quantity_available === 1 ? 'slab' : 'slabs'} available
+                  </span>
+                ) : (
+                  <span className="availability-badge in-stock">In Stock</span>
+                )}
+                {stone.price_per_sqft && (
+                  <span className="stone-price">${stone.price_per_sqft.toFixed(2)}/sqft</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -157,7 +197,7 @@ function StoneCatalog({ onStoneSelected, onBack }: StoneCatalogProps) {
         <button
           className="btn btn-primary"
           onClick={handleContinue}
-          disabled={!selectedStone}
+          disabled={!selectedStone || !selectedStone.in_stock}
         >
           Generate Preview
         </button>

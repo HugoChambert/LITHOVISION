@@ -21,6 +21,10 @@ export type StoneMaterial = {
   preview_image_url: string | null;
   price_per_sqft: number | null;
   is_active: boolean;
+  in_stock: boolean;
+  quantity_available: number | null;
+  low_stock_threshold: number | null;
+  last_inventory_update: string;
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;

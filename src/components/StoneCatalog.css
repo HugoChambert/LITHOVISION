@@ -166,6 +166,65 @@
   font-size: 14px;
   color: var(--color-text-light);
   line-height: 1.5;
+  margin-bottom: var(--spacing-sm);
+}
+
+.stone-availability {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+}
+
+.availability-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.availability-badge.in-stock {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.availability-badge.low-stock {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.availability-badge.out-of-stock {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.stone-price {
+  padding: 4px 10px;
+  background: #f1f5f9;
+  color: #334155;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.stone-card.out-of-stock {
+  position: relative;
+}
+
+.stone-card.out-of-stock::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
 }
 
 .adjustment-controls {

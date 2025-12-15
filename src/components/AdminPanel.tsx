@@ -26,6 +26,9 @@ function AdminPanel() {
     texture_scale: 1.0,
     price_per_sqft: null as number | null,
     is_active: true,
+    in_stock: true,
+    quantity_available: null as number | null,
+    low_stock_threshold: 5 as number | null,
     metadata: {},
   });
 
@@ -159,6 +162,9 @@ function AdminPanel() {
       texture_scale: stone.texture_scale,
       price_per_sqft: stone.price_per_sqft,
       is_active: stone.is_active,
+      in_stock: stone.in_stock,
+      quantity_available: stone.quantity_available,
+      low_stock_threshold: stone.low_stock_threshold || 5,
       metadata: stone.metadata || {},
     });
     setImagePreview(stone.preview_image_url || null);
@@ -194,8 +200,11 @@ function AdminPanel() {
       finish: 'polished',
       preview_image_url: '',
       texture_scale: 1.0,
-      price_per_sqft: null,
+      price_per_sqft: null as number | null,
       is_active: true,
+      in_stock: true,
+      quantity_available: null as number | null,
+      low_stock_threshold: 5 as number | null,
       metadata: {},
     });
     setEditingStone(null);
@@ -393,6 +402,52 @@ function AdminPanel() {
             </small>
           </div>
 
+          <div className="form-group" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px', marginTop: '16px' }}>
+            <h4 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: '600' }}>Inventory Management</h4>
+          </div>
+
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={formData.in_stock}
+                onChange={(e) => setFormData({ ...formData, in_stock: e.target.checked })}
+              />
+              In Stock
+            </label>
+            <small style={{ color: 'var(--color-text-muted)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              Uncheck this if the stone is currently out of stock and unavailable for selection.
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label>Quantity Available (Slabs)</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.quantity_available || ''}
+              onChange={(e) => setFormData({ ...formData, quantity_available: e.target.value ? parseInt(e.target.value) : null })}
+              placeholder="Leave empty for unlimited"
+            />
+            <small style={{ color: 'var(--color-text-muted)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              Enter the number of slabs available. Leave empty if you don't want to track quantity (unlimited).
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label>Low Stock Alert Threshold</label>
+            <input
+              type="number"
+              min="1"
+              value={formData.low_stock_threshold || ''}
+              onChange={(e) => setFormData({ ...formData, low_stock_threshold: e.target.value ? parseInt(e.target.value) : null })}
+              placeholder="5"
+            />
+            <small style={{ color: 'var(--color-text-muted)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              Alert when inventory falls below this number. Default is 5 slabs.
+            </small>
+          </div>
+
           <div className="form-group checkbox-group">
             <label>
               <input
@@ -400,8 +455,11 @@ function AdminPanel() {
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               />
-              Active
+              Active in Catalog
             </label>
+            <small style={{ color: 'var(--color-text-muted)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              Uncheck to hide this material from the user catalog completely.
+            </small>
           </div>
 
           <div className="form-actions">
@@ -469,6 +527,27 @@ function AdminPanel() {
                 <h4>{stone.name}</h4>
                 <p className="stone-meta">
                   {stone.type} • {stone.pattern} • {stone.is_active ? 'Active' : 'Inactive'}
+                </p>
+                <p className="stone-inventory">
+                  {stone.in_stock ? (
+                    <>
+                      <span className="stock-badge in-stock">In Stock</span>
+                      {stone.quantity_available !== null && (
+                        <span className={`quantity ${stone.quantity_available <= (stone.low_stock_threshold || 5) ? 'low-stock' : ''}`}>
+                          {stone.quantity_available} {stone.quantity_available === 1 ? 'slab' : 'slabs'}
+                          {stone.quantity_available <= (stone.low_stock_threshold || 5) && ' ⚠️ Low'}
+                        </span>
+                      )}
+                      {stone.quantity_available === null && (
+                        <span className="quantity">Unlimited</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="stock-badge out-of-stock">Out of Stock</span>
+                  )}
+                  {stone.price_per_sqft && (
+                    <span className="price">${stone.price_per_sqft.toFixed(2)}/sqft</span>
+                  )}
                 </p>
               </div>
               <div className="stone-actions">
