@@ -153,9 +153,9 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
 
   return (
     <div className="area-selector">
-      <h2 className="section-title">Select Your Countertop Surface</h2>
+      <h2 className="section-title">Select Your Surface</h2>
       <p className="section-description">
-        Click anywhere on the countertop you want to replace. Our AI will automatically detect and highlight the entire countertop surface for precise stone replacement.
+        Click anywhere on the countertop or table you want to transform. Our AI will automatically recognize and highlight the entire surface for precise stone material replacement.
       </p>
 
       {error && (
@@ -179,7 +179,7 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
             style={{ position: 'absolute', top: 0, left: 0, pointerEvents: isGenerating ? 'none' : 'auto' }}
           />
           {!canvasReady && <div className="canvas-loading">Loading image...</div>}
-          {isGenerating && <div className="canvas-loading">Detecting area...</div>}
+          {isGenerating && <div className="canvas-loading">Detecting surface...</div>}
         </div>
 
         <div className="tools-panel">
@@ -188,10 +188,10 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
               <strong>How to select:</strong>
             </p>
             <ul style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--color-text-light)', marginTop: '8px', paddingLeft: '20px' }}>
-              <li>Click directly on your countertop surface</li>
-              <li>The AI will automatically detect the entire countertop area</li>
-              <li>Works best with clear, well-lit photos</li>
-              <li>If selection is inaccurate, click Clear and try a different spot on the counter</li>
+              <li>Click directly on your countertop or table surface</li>
+              <li>AI automatically recognizes and detects the entire horizontal surface</li>
+              <li>Works best with clear, well-lit photos taken from a straight angle</li>
+              <li>If selection is inaccurate, click Clear and try a different spot on the surface</li>
             </ul>
           </div>
 

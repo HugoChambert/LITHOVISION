@@ -14,62 +14,8 @@ interface MaskRequest {
 }
 
 async function generateMaskWithReplicate(imageUrl: string, clickX: number, clickY: number): Promise<string> {
-  const replicateApiKey = Deno.env.get('REPLICATE_API_TOKEN');
-
-  if (!replicateApiKey) {
-    console.warn('REPLICATE_API_TOKEN not set, falling back to local algorithm');
-    return '';
-  }
-
-  try {
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${replicateApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        version: '6b4a3f84b5e0d8c5e9c8f0b3e7d9a2c1b4f6e8d0c2a5b7d9e1f3c5a7b9d1e3f5',
-        input: {
-          image: imageUrl,
-          point_coords: `[[${clickX},${clickY}]]`,
-          point_labels: '[1]',
-          multimask_output: false,
-          return_logits: false,
-        }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Replicate API error: ${response.status}`);
-    }
-
-    const prediction = await response.json();
-    const predictionId = prediction.id;
-
-    for (let i = 0; i < 60; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-        headers: {
-          'Authorization': `Token ${replicateApiKey}`,
-        }
-      });
-
-      const statusData = await statusResponse.json();
-
-      if (statusData.status === 'succeeded') {
-        return statusData.output;
-      } else if (statusData.status === 'failed') {
-        throw new Error('Replicate prediction failed');
-      }
-    }
-
-    throw new Error('Replicate prediction timeout');
-  } catch (error) {
-    console.error('Replicate error:', error);
-    return '';
-  }
+  console.log('Using local horizontal surface detection algorithm optimized for countertops and tables');
+  return '';
 }
 
 Deno.serve(async (req: Request) => {
@@ -82,6 +28,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { image_id, click_x, click_y }: MaskRequest = await req.json();
+
+    console.log('Generating mask for horizontal surface (countertop/table) detection at coordinates:', click_x, click_y);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

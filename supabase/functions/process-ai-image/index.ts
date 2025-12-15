@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     const deploymentName = Deno.env.get("AZURE_OPENAI_DEPLOYMENT") || "dall-e-3";
 
     if (!azureEndpoint || !azureApiKey) {
-      throw new Error("Azure OpenAI credentials not configured");
+      throw new Error("Azure OpenAI credentials not configured. This function strictly uses Azure OpenAI for image processing.");
     }
 
     const originalImageResponse = await fetch(originalImageUrl);
@@ -51,17 +51,19 @@ Deno.serve(async (req: Request) => {
     const maskImageBuffer = await maskImageBlob.arrayBuffer();
     const maskImageBase64 = btoa(String.fromCharCode(...new Uint8Array(maskImageBuffer)));
 
-    const prompt = `Transform the kitchen countertop surface in the selected area with ${selectedStone.name} ${selectedStone.type} material.
+    const prompt = `Transform the horizontal surface (countertop or table) in the selected area with ${selectedStone.name} ${selectedStone.type} material.
 Stone details: ${selectedStone.description}.
 Pattern type: ${selectedStone.pattern}.
-IMPORTANT: The selected area is a horizontal countertop surface used for food preparation. Apply the stone texture realistically across the flat countertop plane, maintaining:
-- Natural stone veining and pattern flow appropriate for countertop installation
-- Realistic lighting and reflections on the polished surface
-- Proper perspective and depth for a horizontal surface
-- Seamless edges where countertop meets walls or backsplash
-- Authentic shadows cast by objects on the counter
+CRITICAL CONTEXT: The selected area is a horizontal surface (kitchen countertop, bathroom vanity, dining table, or similar flat surface). Automatically recognize the surface type and apply the stone texture realistically.
+Apply realistic stone material maintaining:
+- Natural stone veining and pattern flow appropriate for the surface type
+- Realistic lighting and reflections on the polished/finished surface
+- Proper perspective and depth for a horizontal plane
+- Seamless edges where surface meets walls, backsplash, or edges
+- Authentic shadows from objects on the surface
 - Natural color variations and texture detail typical of real ${selectedStone.type}
-Adjustments: Brightness ${adjustments.brightness}, Contrast ${adjustments.contrast}, Scale ${adjustments.scale}.`;
+- Consistent material appearance across the entire selected horizontal surface
+Material adjustments: Brightness ${adjustments.brightness}, Contrast ${adjustments.contrast}, Scale ${adjustments.scale}.`;
 
     const apiUrl = `${azureEndpoint}/openai/deployments/${deploymentName}/images/edits?api-version=2024-02-01`;
 

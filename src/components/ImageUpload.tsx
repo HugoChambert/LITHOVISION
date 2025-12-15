@@ -101,9 +101,9 @@ function ImageUpload({ onImageUpload }: ImageUploadProps) {
 
   return (
     <div className="image-upload">
-      <h2 className="section-title">Upload Your Kitchen or Bathroom Photo</h2>
+      <h2 className="section-title">Upload Your Photo</h2>
       <p className="section-description">
-        Upload a clear photo showing your countertop. For best results, ensure the countertop is well-lit, clearly visible, and photographed from a straight-on angle.
+        Upload a clear photo showing the countertop or table surface you want to transform. For best results, ensure the surface is well-lit, clearly visible, and photographed from a straight-on angle.
       </p>
 
       {error && (
