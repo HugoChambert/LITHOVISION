@@ -19,6 +19,7 @@ export type StoneMaterial = {
   finish: string;
   texture_scale: number;
   preview_image_url: string | null;
+  price_per_sqft: number | null;
   is_active: boolean;
   metadata: Record<string, any>;
   created_at: string;

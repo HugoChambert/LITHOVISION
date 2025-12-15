@@ -24,6 +24,7 @@ function AdminPanel() {
     finish: 'polished',
     preview_image_url: '',
     texture_scale: 1.0,
+    price_per_sqft: null as number | null,
     is_active: true,
     metadata: {},
   });
@@ -156,6 +157,7 @@ function AdminPanel() {
       finish: stone.finish,
       preview_image_url: stone.preview_image_url || '',
       texture_scale: stone.texture_scale,
+      price_per_sqft: stone.price_per_sqft,
       is_active: stone.is_active,
       metadata: stone.metadata || {},
     });
@@ -192,6 +194,7 @@ function AdminPanel() {
       finish: 'polished',
       preview_image_url: '',
       texture_scale: 1.0,
+      price_per_sqft: null,
       is_active: true,
       metadata: {},
     });
@@ -373,6 +376,21 @@ function AdminPanel() {
               onChange={(e) => setFormData({ ...formData, texture_scale: parseFloat(e.target.value) })}
               required
             />
+          </div>
+
+          <div className="form-group">
+            <label>Price Per Square Foot ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.price_per_sqft || ''}
+              onChange={(e) => setFormData({ ...formData, price_per_sqft: e.target.value ? parseFloat(e.target.value) : null })}
+              placeholder="Optional"
+            />
+            <small style={{ color: 'var(--color-text-muted)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              Set the price per square foot for this stone material. Leave empty if pricing is not available.
+            </small>
           </div>
 
           <div className="form-group checkbox-group">
