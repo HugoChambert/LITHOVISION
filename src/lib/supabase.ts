@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://gomgqiepkiknloiwsjhl.supabase.co',
-  supabaseAnonKey || 'sb_publishable_wNDYsmZgNsHuc2ZwzYS4Mg_Z0I7Niqj'
+  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvbWdxaWVwa2lrbmxvaXdzamhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NTI0MzAsImV4cCI6MjA4MjAyODQzMH0.nSX0YeM5XthFso0Y78jVfvfGaV1AgQjS0ZOnRsQvvFk'
 );
 
 export type StoneMaterial = {
