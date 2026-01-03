@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 
-const supabase_url = "https://gomgqiepkiknloiwsjhl.supabase.co/functions/v1/generate-mask";
 export interface UploadResponse {
   image_id: string;
   image_url: string;
