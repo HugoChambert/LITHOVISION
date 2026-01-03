@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
 
     const azureEndpoint = Deno.env.get("AZURE_OPENAI_ENDPOINT");
     const azureApiKey = Deno.env.get("AZURE_OPENAI_KEY");
-    const deploymentName = Deno.env.get("AZURE_OPENAI_DEPLOYMENT") || "dall-e-3";
+    const deploymentName = Deno.env.get("AZURE_OPENAI_DEPLOYMENT");
 
     if (!azureEndpoint || !azureApiKey) {
       throw new Error("Azure OpenAI credentials not configured. This function strictly uses Azure OpenAI for image processing.");
