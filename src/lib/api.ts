@@ -70,6 +70,29 @@ export async function generateMask(imageId: string, clickX: number, clickY: numb
   return response.json();
 }
 
+export async function generateAutoMask(imageId: string): Promise<MaskResponse> {
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`;
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image_id: imageId,
+      auto_detect: true
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to auto-detect surface');
+  }
+
+  return response.json();
+}
+
 export async function uploadMask(maskBlob: Blob): Promise<UploadResponse> {
   const fileName = `mask_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
   const filePath = `masks/${fileName}`;
