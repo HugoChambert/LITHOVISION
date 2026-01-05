@@ -18,7 +18,6 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
   const [error, setError] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const scaleRef = useRef<number>(1);
-  let mask_url = `mask_${imageUrl}`;
 
   useEffect(() => {
     const canvas = canvasRef.current;
