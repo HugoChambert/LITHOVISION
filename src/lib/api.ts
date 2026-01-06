@@ -47,7 +47,7 @@ export async function uploadImage(file: File | Blob, filename?: string): Promise
 }
 
 export async function generateMask(imageId: string, clickX: number, clickY: number): Promise<MaskResponse> {
-  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`;
+  const apiUrl = 'https://gomgqiepkiknloiwsjhl.supabase.co/functions/v1/generate-mask';
 
   const response = await fetch(apiUrl, {
     method: 'POST',
