@@ -112,7 +112,6 @@ function App() {
     }
   };
 
-<<<<<<< HEAD
   const handleAreaSelected = async (mask: string, maskBlob: Blob) => {
     setMaskData(mask);
 
@@ -127,9 +126,6 @@ function App() {
     }
   };
   
-=======
-
->>>>>>> d18212bd1d826e9c02daf36da01386a342b0e91e
   const handleStonesSelected = async (stones: StoneMaterial[]) => {
     if (!imageId || !maskId) {
       showToast('Missing image or mask data', 'error');
