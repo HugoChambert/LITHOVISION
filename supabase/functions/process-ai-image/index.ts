@@ -88,7 +88,7 @@ Material adjustments: Brightness ${adjustments.brightness}, Contrast ${adjustmen
 
 REMINDER: The user specifically selected ${selectedStone.name} - apply ONLY this exact material, not similar alternatives.`;
 
-    const apiUrl = `${azureEndpoint}/openai/deployments/${deploymentName}/images/edits?api-version=2024-02-01`;
+    const apiUrl = `${azureEndpoint}/openai/images/edits?api-version=2024-02-15-preview`;
 
     const formData = new FormData();
     formData.append("image", new Blob([originalImageBuffer], { type: "image/png" }), "image.png");

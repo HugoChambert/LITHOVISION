@@ -119,7 +119,7 @@ function App() {
       showToast(errorMessage, 'error');
     }
   };
-
+  
   const handleStonesSelected = async (stones: StoneMaterial[]) => {
     if (!imageId || !maskId) {
       showToast('Missing image or mask data', 'error');
