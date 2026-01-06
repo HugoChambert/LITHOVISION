@@ -47,7 +47,7 @@ export async function uploadImage(file: File | Blob, filename?: string): Promise
 }
 
 export async function generateMask(imageId: string, clickX: number, clickY: number): Promise<MaskResponse> {
-  const apiUrl = 'https://gomgqiepkiknloiwsjhl.supabase.co/functions/v1/generate-mask';
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`;
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -65,6 +65,29 @@ export async function generateMask(imageId: string, clickX: number, clickY: numb
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to generate mask');
+  }
+
+  return response.json();
+}
+
+export async function generateAutoMask(imageId: string): Promise<MaskResponse> {
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`;
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image_id: imageId,
+      auto_detect: true
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to auto-detect surface');
   }
 
   return response.json();

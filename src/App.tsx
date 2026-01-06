@@ -7,7 +7,6 @@ import * as sessionManager from './lib/sessionManager';
 import { showToast } from './components/ToastContainer';
 import Header from './components/Header';
 import ImageUpload from './components/ImageUpload';
-import AreaSelector from './components/AreaSelector';
 import StoneCatalog from './components/StoneCatalog';
 import PreviewPanel from './components/PreviewPanel';
 import AdminPanel from './components/AdminPanel';
@@ -17,7 +16,7 @@ import ProjectGallery from './components/ProjectGallery';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import './App.css';
 
-type Step = 'upload' | 'select' | 'choose-stone' | 'preview';
+type Step = 'upload' | 'choose-stone' | 'preview';
 
 function App() {
   const { user, signOut } = useAuth();
@@ -65,7 +64,8 @@ function App() {
   const loadSession = () => {
     if (sessionManager.hasStoredSession()) {
       const session = sessionManager.loadSessionLocal();
-      setCurrentStep(session.currentStep);
+      const step = session.currentStep === 'select' ? 'choose-stone' : session.currentStep;
+      setCurrentStep(step as Step);
       setUploadedImage(session.uploadedImage);
       setImageId(session.imageId);
       setMaskData(session.maskData);
@@ -97,8 +97,14 @@ function App() {
     try {
       const response = await api.uploadImage(file);
       setImageId(response.image_id);
-      setCurrentStep('select');
-      showToast('Image uploaded successfully', 'success');
+
+      showToast('Generating surface mask...', 'info');
+      const maskResponse = await api.generateAutoMask(response.image_id);
+      setMaskId(maskResponse.mask_id);
+      setMaskData(maskResponse.mask_url);
+
+      setCurrentStep('choose-stone');
+      showToast('Image uploaded and surface detected successfully', 'success');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
       showToast(errorMessage, 'error');
@@ -106,6 +112,7 @@ function App() {
     }
   };
 
+<<<<<<< HEAD
   const handleAreaSelected = async (mask: string, maskBlob: Blob) => {
     setMaskData(mask);
 
@@ -120,6 +127,9 @@ function App() {
     }
   };
   
+=======
+
+>>>>>>> d18212bd1d826e9c02daf36da01386a342b0e91e
   const handleStonesSelected = async (stones: StoneMaterial[]) => {
     if (!imageId || !maskId) {
       showToast('Missing image or mask data', 'error');
@@ -342,16 +352,12 @@ function App() {
               <div className="step-number">1</div>
               <div className="step-label">Upload Photo</div>
             </div>
-            <div className={`step ${currentStep === 'select' ? 'active' : ''} ${maskData ? 'completed' : ''}`}>
-              <div className="step-number">2</div>
-              <div className="step-label">Select Area</div>
-            </div>
             <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStones.length > 0 ? 'completed' : ''}`}>
-              <div className="step-number">3</div>
-              <div className="step-label">Choose Stones</div>
+              <div className="step-number">2</div>
+              <div className="step-label">Choose Stone</div>
             </div>
             <div className={`step ${currentStep === 'preview' ? 'active' : ''}`}>
-              <div className="step-number">4</div>
+              <div className="step-number">3</div>
               <div className="step-label">Preview</div>
             </div>
           </div>
@@ -361,19 +367,10 @@ function App() {
               <ImageUpload onImageUpload={handleImageUpload} />
             )}
 
-            {currentStep === 'select' && uploadedImage && imageId && (
-              <AreaSelector
-                imageUrl={uploadedImage}
-                imageId={imageId}
-                onAreaSelected={handleAreaSelected}
-                onBack={() => setCurrentStep('upload')}
-              />
-            )}
-
             {currentStep === 'choose-stone' && (
               <StoneCatalog
                 onStonesSelected={handleStonesSelected}
-                onBack={() => setCurrentStep('select')}
+                onBack={() => setCurrentStep('upload')}
               />
             )}
 
