@@ -112,20 +112,6 @@ function App() {
     }
   };
 
-  const handleAreaSelected = async (mask: string, maskBlob: Blob) => {
-    setMaskData(mask);
-
-    try {
-      const response = await api.uploadMask(maskBlob);
-      setMaskId(response.image_id);
-      setCurrentStep('choose-stone');
-      showToast('Area selected successfully', 'success');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload mask';
-      showToast(errorMessage, 'error');
-    }
-  };
-  
   const handleStonesSelected = async (stones: StoneMaterial[]) => {
     if (!imageId || !maskId) {
       showToast('Missing image or mask data', 'error');
