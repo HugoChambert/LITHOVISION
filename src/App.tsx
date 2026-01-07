@@ -377,7 +377,6 @@ function App() {
             {currentStep === 'select-area' && uploadedImage && imageId && (
               <AreaSelector
                 imageUrl={uploadedImage}
-                imageId={imageId}
                 onAreaSelected={handleAreaSelected}
                 onBack={() => setCurrentStep('upload')}
               />
