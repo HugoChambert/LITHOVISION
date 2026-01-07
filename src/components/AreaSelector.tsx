@@ -12,6 +12,7 @@ interface AreaSelectorProps {
 function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentMask, setCurrentMask] = useState<string | null>(null);
@@ -21,7 +22,8 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const wrapper = wrapperRef.current;
+    if (!canvas || !wrapper) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -41,6 +43,9 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
         overlayCanvasRef.current.width = canvas.width;
         overlayCanvasRef.current.height = canvas.height;
       }
+
+      wrapper.style.width = `${canvas.width}px`;
+      wrapper.style.height = `${canvas.height}px`;
 
       imageRef.current = img;
       setCanvasReady(true);
@@ -163,7 +168,11 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
       )}
 
       <div className="selector-container">
-        <div className="canvas-wrapper" style={{ position: 'relative', cursor: isGenerating ? 'wait' : 'crosshair' }}>
+        <div
+          ref={wrapperRef}
+          className="canvas-wrapper"
+          style={{ position: 'relative', cursor: isGenerating ? 'wait' : 'crosshair' }}
+        >
           <canvas
             ref={canvasRef}
             className="selection-canvas"
