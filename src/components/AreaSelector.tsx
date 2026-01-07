@@ -54,81 +54,103 @@ function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelecto
   }, [imageUrl]);
 
   const handleCanvasClick = async (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (isGenerating || !canvasReady) return;
+  if (isGenerating || !canvasReady) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const canvas = canvasRef.current;
+  if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    let displayX: number;
-    let displayY: number;
+  const rect = canvas.getBoundingClientRect();
+  let displayX: number;
+  let displayY: number;
 
-    if ('touches' in e) {
-      e.preventDefault();
-      const touch = e.touches[0] || e.changedTouches[0];
-      displayX = touch.clientX - rect.left;
-      displayY = touch.clientY - rect.top;
-    } else {
-      displayX = e.clientX - rect.left;
-      displayY = e.clientY - rect.top;
+  if ('touches' in e) {
+    e.preventDefault();
+    const touch = e.touches[0] || e.changedTouches[0];
+    displayX = touch.clientX - rect.left;
+    displayY = touch.clientY - rect.top;
+  } else {
+    displayX = e.clientX - rect.left;
+    displayY = e.clientY - rect.top;
+  }
+
+  const imageX = Math.round(displayX / scaleRef.current);
+  const imageY = Math.round(displayY / scaleRef.current);
+
+  setIsGenerating(true);
+  setError(null);
+
+  try {
+    const img = imageRef.current;
+    if (!img) {
+      throw new Error('Image not loaded');
     }
 
-    const imageX = Math.round(displayX / scaleRef.current);
-    const imageY = Math.round(displayY / scaleRef.current);
+    // Generate mask client-side
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = img.width;
+    maskCanvas.height = img.height;
+    const maskCtx = maskCanvas.getContext('2d');
+    if (!maskCtx) {
+      throw new Error('Failed to get canvas context');
+    }
 
-    setIsGenerating(true);
-    setError(null);
+    // Create a simple rectangular mask (you can improve this with flood fill later)
+    maskCtx.fillStyle = 'white';
+    const maskSize = Math.min(img.width, img.height) * 0.3; // 30% of image size
+    maskCtx.fillRect(
+      Math.max(0, imageX - maskSize/2),
+      Math.max(0, imageY - maskSize/2),
+      Math.min(maskSize, img.width - imageX + maskSize/2),
+      Math.min(maskSize, img.height - imageY + maskSize/2)
+    );
 
-    try {
-      const img = imageRef.current;
-      if (!img) return;
+    // Get mask data for overlay
+    const maskImageData = maskCtx.getImageData(0, 0, img.width, img.height);
+    const maskData = maskImageData.data;
 
-      const maskResponse = await api.generateMask(imageId, imageX, imageY);
+    // Display overlay
+    const overlayCanvas = overlayCanvasRef.current;
+    if (!overlayCanvas) return;
 
-      const maskImageResponse = await fetch(maskResponse.mask_url);
-      const maskBlob = await maskImageResponse.blob();
-      const maskBitmap = await createImageBitmap(maskBlob);
+    const overlayCtx = overlayCanvas.getContext('2d');
+    if (!overlayCtx) return;
 
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = img.width;
-      maskCanvas.height = img.height;
-      const maskCtx = maskCanvas.getContext('2d');
-      if (!maskCtx) return;
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    overlayCtx.globalAlpha = 0.5;
+    overlayCtx.fillStyle = '#3b82f6';
 
-      maskCtx.drawImage(maskBitmap, 0, 0);
-      const maskImageData = maskCtx.getImageData(0, 0, img.width, img.height);
-      const maskData = maskImageData.data;
+    overlayCtx.save();
+    overlayCtx.scale(scaleRef.current, scaleRef.current);
 
-      const overlayCanvas = overlayCanvasRef.current;
-      if (!overlayCanvas) return;
-
-      const overlayCtx = overlayCanvas.getContext('2d');
-      if (!overlayCtx) return;
-
-      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-      overlayCtx.globalAlpha = 0.5;
-      overlayCtx.fillStyle = '#3b82f6';
-
-      overlayCtx.save();
-      overlayCtx.scale(scaleRef.current, scaleRef.current);
-
-      for (let y = 0; y < img.height; y++) {
-        for (let x = 0; x < img.width; x++) {
-          const i = (y * img.width + x) * 4;
-          if (maskData[i] > 128) {
-            overlayCtx.fillRect(x, y, 1, 1);
-          }
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4;
+        if (maskData[i] > 128) {
+          overlayCtx.fillRect(x, y, 1, 1);
         }
       }
-
-      overlayCtx.restore();
-      setCurrentMask(maskResponse.mask_url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate mask');
-    } finally {
-      setIsGenerating(false);
     }
-  };
+
+    overlayCtx.restore();
+
+    // Convert mask to blob and create object URL
+    const maskBlob = await new Promise<Blob>((resolve, reject) => {
+      maskCanvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to create mask blob'));
+      }, 'image/png');
+    });
+
+    const maskUrl = URL.createObjectURL(maskBlob);
+    setCurrentMask(maskUrl);
+
+  } catch (err) {
+    console.error('Mask generation error:', err);
+    setError(err instanceof Error ? err.message : 'Failed to generate mask');
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
 
   const handleClear = () => {
