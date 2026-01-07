@@ -1,15 +1,13 @@
 import { useRef, useEffect, useState } from 'react';
-import * as api from '../lib/api';
 import './AreaSelector.css';
 
 interface AreaSelectorProps {
   imageUrl: string;
-  imageId: string;
   onAreaSelected: (maskData: string, maskBlob: Blob) => void;
   onBack: () => void;
 }
 
-function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelectorProps) {
+function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
