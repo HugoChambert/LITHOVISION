@@ -15,13 +15,9 @@
   position: relative;
   background: var(--color-bg);
   border-radius: var(--radius-lg);
-  overflow: hidden;
   box-shadow: var(--shadow-md);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 300px;
-  width: 100%;
+  margin: 0 auto;
 }
 
 .selection-canvas {

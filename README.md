@@ -1,27 +1,39 @@
-# Stone Replacement Tool
+# AI Stone Replacement Tool
 
-A production-ready web application for visualizing stone material replacements in kitchen and bathroom photos. Upload a photo, select the area to replace, and choose from a catalog of stone materials.
+A production-ready web application that automatically detects and replaces stone materials in kitchen and bathroom photos using AI. Simply upload a photo, choose a stone material, and instantly see realistic previews.
 
 ## ✨ Production Ready
 
-This application is **fully serverless** and ready to deploy to Netlify, Vercel, or any static hosting platform. No GPU servers, Docker, or complex infrastructure required.
+This application is **fully serverless** and ready to deploy. No GPU servers, Docker, or complex infrastructure required.
 
-## ⚡ Quick Setup Summary
+## 🚀 New Simplified Workflow
+
+1. **Upload Photo** - System automatically detects countertop/surface
+2. **Choose Stone** - Select from catalog of granite, marble, quartz
+3. **View Results** - AI generates realistic previews instantly
+
+**No manual area selection needed!**
+
+## ⚡ Quick Setup
 
 **What you need:**
-- ✅ Supabase (already configured) - All data and storage
-- ⚠️ **Azure OpenAI** - Required for AI image editing ([Get started →](#2-azure-openai-required-for-ai-processing-️))
+- ✅ Supabase account - Database and storage
+- ⚠️ **Azure OpenAI or OpenAI API** - Required for AI processing
 
-**Setup time:** ~10 minutes
+**Setup time:** ~15 minutes
+
+📖 **[Complete Setup Guide →](./SETUP_GUIDE.md)** - Detailed step-by-step instructions
 
 ## Features
 
 ### Core Functionality
-- **Photo Upload**: Drag-and-drop or click-to-upload with Supabase Storage
-- **Interactive Area Selection**: Canvas-based drawing tool with brush/eraser modes
-- **Stone Material Catalog**: Filterable gallery of granite, marble, and quartz materials
-- **Job Tracking**: Database-backed processing status tracking
-- **Preview & Comparison**: Side-by-side comparison view with download capability
+- **Automatic Surface Detection**: AI automatically identifies countertops, vanities, and tables
+- **Photo Upload**: Drag-and-drop or click-to-upload with instant processing
+- **Stone Material Catalog**: Curated gallery of granite, marble, and quartz materials
+- **AI-Powered Replacement**: Realistic stone application preserving lighting and perspective
+- **Real-time Processing**: Live progress tracking for each stone option
+- **Before/After Comparison**: Interactive slider to compare original and edited images
+- **Multiple Preview Generation**: Select multiple stones to compare side-by-side
 
 ### Admin Features
 - **Catalog Management**: Add, edit, and delete stone materials
@@ -237,16 +249,31 @@ While Azure OpenAI is the default, you can modify the edge functions to use:
 
 ### AI Processing Pipeline
 
-1. **User clicks on surface** → `generate-mask` edge function
-   - Smart algorithm detects the entire surface area
-   - Uses adaptive color tolerance for accuracy
+1. **Upload Image** → Stored in Supabase Storage
+   - Image uploaded to `uploads/` folder
+   - Unique ID generated for tracking
 
-2. **User selects stone material** → `process-ai-image` edge function
-   - Azure OpenAI DALL-E replaces the masked area
-   - Preserves lighting, shadows, and perspective
-   - Returns processed image
+2. **Automatic Surface Detection** → `generate-mask` edge function
+   - AI analyzes image to find horizontal surfaces (countertops, tables)
+   - Evaluates color consistency, uniformity, and patterns
+   - Generates precise mask of detected surface
 
-3. **Results displayed** → User can compare and download
+3. **Stone Selection** → User chooses materials
+   - Browse catalog of granite, marble, quartz
+   - Select single or multiple stones for comparison
+
+4. **AI Image Processing** → `process-ai-image` edge function
+   - Azure OpenAI DALL-E receives:
+     - Original image
+     - Surface mask
+     - Stone specifications (type, color, pattern, finish)
+   - AI generates realistic replacement
+   - Preserves lighting, shadows, reflections, and perspective
+
+5. **Results Display** → Interactive preview
+   - Before/after slider for comparison
+   - Zoom, share, save functionality
+   - Download high-quality results
 
 ## Responsive Design
 
@@ -289,9 +316,9 @@ npm run build
 ### For End Users
 
 1. **Upload Photo**: Click or drag-and-drop a photo of your kitchen/bathroom
-2. **Select Area**: Use the brush tool to paint over the stone surface to replace
-3. **Choose Stone**: Browse and select from the material catalog
-4. **View Preview**: Compare original vs. preview and download the result
+2. **Automatic Detection**: System automatically identifies the countertop surface
+3. **Choose Stone**: Browse and select one or more materials from the catalog
+4. **View Results**: Compare original vs. AI-generated previews and download
 
 ### For Administrators
 

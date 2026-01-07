@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
 
     const azureEndpoint = Deno.env.get("AZURE_OPENAI_ENDPOINT");
     const azureApiKey = Deno.env.get("AZURE_OPENAI_KEY");
-    const deploymentName = Deno.env.get("AZURE_OPENAI_DEPLOYMENT") || "dall-e-3";
+    const deploymentName = Deno.env.get("AZURE_OPENAI_DEPLOYMENT");
 
     if (!azureEndpoint || !azureApiKey) {
       throw new Error("Azure OpenAI credentials not configured. This function strictly uses Azure OpenAI for image processing.");
@@ -88,7 +88,7 @@ Material adjustments: Brightness ${adjustments.brightness}, Contrast ${adjustmen
 
 REMINDER: The user specifically selected ${selectedStone.name} - apply ONLY this exact material, not similar alternatives.`;
 
-    const apiUrl = `${azureEndpoint}/openai/deployments/${deploymentName}/images/edits?api-version=2024-02-01`;
+    const apiUrl = `${azureEndpoint}/openai/images/edits?api-version=2024-02-15-preview`;
 
     const formData = new FormData();
     formData.append("image", new Blob([originalImageBuffer], { type: "image/png" }), "image.png");

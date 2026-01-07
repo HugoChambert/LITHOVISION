@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { type StoneMaterial } from './supabase';
 
 export interface SessionData {
-  currentStep: 'upload' | 'select' | 'choose-stone' | 'preview';
+  currentStep: 'upload' | 'select-area' | 'choose-stone' | 'preview';
   uploadedImage: string | null;
   imageId: string | null;
   maskData: string | null;

@@ -9,8 +9,9 @@ const corsHeaders = {
 
 interface MaskRequest {
   image_id: string;
-  click_x: number;
-  click_y: number;
+  click_x?: number;
+  click_y?: number;
+  auto_detect?: boolean;
 }
 
 async function generateMaskWithReplicate(imageUrl: string, clickX: number, clickY: number): Promise<string> {
@@ -27,9 +28,13 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { image_id, click_x, click_y }: MaskRequest = await req.json();
+    const { image_id, click_x, click_y, auto_detect }: MaskRequest = await req.json();
 
-    console.log('Generating mask for horizontal surface (countertop/table) detection at coordinates:', click_x, click_y);
+    if (auto_detect) {
+      console.log('Auto-detecting horizontal surfaces (countertops/tables) in image');
+    } else {
+      console.log('Generating mask for horizontal surface (countertop/table) detection at coordinates:', click_x, click_y);
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -69,10 +74,20 @@ Deno.serve(async (req: Request) => {
       const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
       const maskData = new Uint8ClampedArray(imageData.data.length).fill(0);
 
-      const targetPixel = getPixel(imageData, click_x, click_y);
-      const tolerance = calculateAdaptiveTolerance(imageData, click_x, click_y, img.width, img.height);
+      let targetX = click_x;
+      let targetY = click_y;
 
-      floodFill(imageData, maskData, img.width, img.height, click_x, click_y, targetPixel, tolerance);
+      if (auto_detect) {
+        const detectedPoint = detectCountertopCenter(imageData, img.width, img.height);
+        targetX = detectedPoint.x;
+        targetY = detectedPoint.y;
+        console.log('Auto-detected countertop center at:', targetX, targetY);
+      }
+
+      const targetPixel = getPixel(imageData, targetX!, targetY!);
+      const tolerance = calculateAdaptiveTolerance(imageData, targetX!, targetY!, img.width, img.height);
+
+      floodFill(imageData, maskData, img.width, img.height, targetX!, targetY!, targetPixel, tolerance);
 
       morphologicalClose(maskData, img.width, img.height, 3);
       removeSmallRegions(maskData, img.width, img.height, 100);
@@ -335,6 +350,85 @@ function smoothMaskEdges(
   for (let i = 0; i < maskData.length; i += 4) {
     maskData[i + 3] = temp[i + 3];
   }
+}
+
+function detectCountertopCenter(
+  imageData: ImageData,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  const centerX = Math.floor(width / 2);
+  const centerY = Math.floor(height * 0.6);
+
+  const searchRadius = Math.min(width, height) / 4;
+  let bestScore = -1;
+  let bestX = centerX;
+  let bestY = centerY;
+
+  for (let dy = -searchRadius; dy <= searchRadius; dy += 20) {
+    for (let dx = -searchRadius; dx <= searchRadius; dx += 20) {
+      const testX = Math.floor(centerX + dx);
+      const testY = Math.floor(centerY + dy);
+
+      if (testX < 0 || testX >= width || testY < 0 || testY >= height) continue;
+
+      const score = evaluateCountertopPoint(imageData, testX, testY, width, height);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestX = testX;
+        bestY = testY;
+      }
+    }
+  }
+
+  return { x: bestX, y: bestY };
+}
+
+function evaluateCountertopPoint(
+  imageData: ImageData,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): number {
+  const testRadius = 15;
+  let horizontalVariance = 0;
+  let verticalVariance = 0;
+  let horizontalCount = 0;
+  let verticalCount = 0;
+
+  const centerColor = getPixel(imageData, x, y);
+
+  for (let dx = -testRadius; dx <= testRadius; dx++) {
+    const testX = x + dx;
+    if (testX >= 0 && testX < width) {
+      const color = getPixel(imageData, testX, y);
+      horizontalVariance += colorDistance(centerColor, color);
+      horizontalCount++;
+    }
+  }
+
+  for (let dy = -testRadius; dy <= testRadius; dy++) {
+    const testY = y + dy;
+    if (testY >= 0 && testY < height) {
+      const color = getPixel(imageData, x, testY);
+      verticalVariance += colorDistance(centerColor, color);
+      verticalCount++;
+    }
+  }
+
+  const avgHorizontalVariance = horizontalVariance / horizontalCount;
+  const avgVerticalVariance = verticalVariance / verticalCount;
+
+  const uniformityScore = 100 - avgHorizontalVariance;
+  const horizontalBias = avgVerticalVariance > avgHorizontalVariance ? 50 : 0;
+
+  const [r, g, b] = centerColor;
+  const brightness = (r + g + b) / 3;
+  const brightnessScore = brightness > 50 && brightness < 220 ? 30 : 0;
+
+  return uniformityScore + horizontalBias + brightnessScore;
 }
 
 function floodFill(
