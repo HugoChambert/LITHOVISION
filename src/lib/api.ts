@@ -154,6 +154,10 @@ async function processWithAI(jobId: string, imageId: string, maskId: string, sto
 
     const originalImageUrl = getImageUrl(imageId);
     const maskImageUrl = getImageUrl(maskId);
+    console.log('Image ID:', imageId);
+    console.log('Mask ID:', maskId);
+    console.log('Original Image URL:', originalImageUrl);
+    console.log('Mask Image URL:', maskImageUrl);
 
     await supabase
       .from('processing_jobs')
@@ -265,12 +269,13 @@ export async function getTaskStatus(taskId: string): Promise<TaskStatus> {
 
 export function getImageUrl(path: string): string {
   if (path.startsWith('http')) {
+    console.log('Already a URL, returning as-is');
     return path;
   }
 
   const { data: { publicUrl } } = supabase.storage
     .from('stone-images')
     .getPublicUrl(path);
-
+  console.log('Generated public URL:', publicUrl);
   return publicUrl;
 }
