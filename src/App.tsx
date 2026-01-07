@@ -7,6 +7,7 @@ import * as sessionManager from './lib/sessionManager';
 import { showToast } from './components/ToastContainer';
 import Header from './components/Header';
 import ImageUpload from './components/ImageUpload';
+import AreaSelector from './components/AreaSelector';
 import StoneCatalog from './components/StoneCatalog';
 import PreviewPanel from './components/PreviewPanel';
 import AdminPanel from './components/AdminPanel';
@@ -16,7 +17,7 @@ import ProjectGallery from './components/ProjectGallery';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import './App.css';
 
-type Step = 'upload' | 'choose-stone' | 'preview';
+type Step = 'upload' | 'select-area' | 'choose-stone' | 'preview';
 
 function App() {
   const { user, signOut } = useAuth();
@@ -64,8 +65,7 @@ function App() {
   const loadSession = () => {
     if (sessionManager.hasStoredSession()) {
       const session = sessionManager.loadSessionLocal();
-      const step = session.currentStep === 'select' ? 'choose-stone' : session.currentStep;
-      setCurrentStep(step as Step);
+      setCurrentStep(session.currentStep);
       setUploadedImage(session.uploadedImage);
       setImageId(session.imageId);
       setMaskData(session.maskData);
@@ -98,17 +98,38 @@ function App() {
       const response = await api.uploadImage(file);
       setImageId(response.image_id);
 
-      showToast('Generating surface mask...', 'info');
-      const maskResponse = await api.generateAutoMask(response.image_id);
-      setMaskId(maskResponse.mask_id);
-      setMaskData(maskResponse.mask_url);
-
-      setCurrentStep('choose-stone');
-      showToast('Image uploaded and surface detected successfully', 'success');
+      setCurrentStep('select-area');
+      showToast('Image uploaded successfully', 'success');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
       showToast(errorMessage, 'error');
       setUploadedImage(null);
+    }
+  };
+
+  const handleAreaSelected = async (maskData: string, maskBlob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('mask', maskBlob, 'mask.png');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/upload-mask`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload mask');
+      }
+
+      const data = await response.json();
+      setMaskId(data.mask_id);
+      setMaskData(maskData);
+
+      setCurrentStep('choose-stone');
+      showToast('Surface selected successfully', 'success');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process selected area';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -334,12 +355,16 @@ function App() {
               <div className="step-number">1</div>
               <div className="step-label">Upload Photo</div>
             </div>
-            <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStones.length > 0 ? 'completed' : ''}`}>
+            <div className={`step ${currentStep === 'select-area' ? 'active' : ''} ${maskData ? 'completed' : ''}`}>
               <div className="step-number">2</div>
+              <div className="step-label">Select Area</div>
+            </div>
+            <div className={`step ${currentStep === 'choose-stone' ? 'active' : ''} ${selectedStones.length > 0 ? 'completed' : ''}`}>
+              <div className="step-number">3</div>
               <div className="step-label">Choose Stone</div>
             </div>
             <div className={`step ${currentStep === 'preview' ? 'active' : ''}`}>
-              <div className="step-number">3</div>
+              <div className="step-number">4</div>
               <div className="step-label">Preview</div>
             </div>
           </div>
@@ -349,10 +374,19 @@ function App() {
               <ImageUpload onImageUpload={handleImageUpload} />
             )}
 
+            {currentStep === 'select-area' && uploadedImage && imageId && (
+              <AreaSelector
+                imageUrl={uploadedImage}
+                imageId={imageId}
+                onAreaSelected={handleAreaSelected}
+                onBack={() => setCurrentStep('upload')}
+              />
+            )}
+
             {currentStep === 'choose-stone' && (
               <StoneCatalog
                 onStonesSelected={handleStonesSelected}
-                onBack={() => setCurrentStep('upload')}
+                onBack={() => setCurrentStep('select-area')}
               />
             )}
 
