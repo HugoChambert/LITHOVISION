@@ -8,8 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://gomgqiepkiknloiwsjhl.supabase.co',
-  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvbWdxaWVwa2lrbmxvaXdzamhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NTI0MzAsImV4cCI6MjA4MjAyODQzMH0.nSX0YeM5XthFso0Y78jVfvfGaV1AgQjS0ZOnRsQvvFk'
+  supabaseUrl || 'https://gokxfksohedxzooexisa.supabase.co',
+  supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdva3hma3NvaGVkeHpvb2V4aXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MTYzOTUsImV4cCI6MjA4MzM5MjM5NX0.VzEzswWJSynaQ0KM0YeODirdNuua3KsxQhZt9uZRAfE'
 );
 
 export type StoneMaterial = {
