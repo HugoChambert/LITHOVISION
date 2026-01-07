@@ -112,7 +112,7 @@ function App() {
       const formData = new FormData();
       formData.append('mask', maskBlob, 'mask.png');
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/generate-mask`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`, {
         method: 'POST',
         body: formData,
       });
