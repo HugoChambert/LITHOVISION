@@ -3,11 +3,12 @@ import './AreaSelector.css';
 
 interface AreaSelectorProps {
   imageUrl: string;
+  imageId: string;
   onAreaSelected: (maskData: string, maskBlob: Blob) => void;
   onBack: () => void;
 }
 
-function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
+function AreaSelector({ imageUrl, imageId, onAreaSelected, onBack }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
