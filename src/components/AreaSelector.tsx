@@ -139,9 +139,15 @@ function AreaSelector({ imageUrl, onAreaSelected, onBack }: AreaSelectorProps) {
       }, 'image/png');
     });
 
-    const maskUrl = URL.createObjectURL(maskBlob);
-    setCurrentMask(maskUrl);
+    console.log('Mask blob created:', maskBlob.size, 'bytes');
 
+    // Upload to Supabase
+    const { uploadMask } = await import('../lib/api');
+    const uploadResponse = await uploadMask(maskBlob);
+    console.log('Mask uploaded:', uploadResponse);
+
+    // Store the Supabase URL
+    setCurrentMask(uploadResponse.image_url);
   } catch (err) {
     console.error('Mask generation error:', err);
     setError(err instanceof Error ? err.message : 'Failed to generate mask');
