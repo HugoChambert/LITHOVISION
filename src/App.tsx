@@ -107,29 +107,42 @@ function App() {
     }
   };
 
-  const handleAreaSelected = async (maskData: string, maskBlob: Blob) => {
+  const handleAreaSelected = async (clickX: number, clickY: number) => {
     try {
-      const formData = new FormData();
-      formData.append('mask', maskBlob, 'mask.png');
+      setIsProcessing(true);
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-mask`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image_id: imageId,
+            click_x: clickX,
+            click_y: clickY,
+            auto_detect: false,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to upload mask');
+        const err = await response.text();
+        throw new Error(err);
       }
 
       const data = await response.json();
-      setMaskId(data.mask_id);
-      setMaskData(maskData);
 
-      setCurrentStep('choose-stone');
-      showToast('Surface selected successfully', 'success');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process selected area';
-      showToast(errorMessage, 'error');
+      setMaskId(data.mask_id);
+      setMaskData(data.mask_url);
+
+      setCurrentStep("choose-stone");
+      showToast("Surface selected", "success");
+    } catch (e) {
+      showToast("Failed to generate mask", "error");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
